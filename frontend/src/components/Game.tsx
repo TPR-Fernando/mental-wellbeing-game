@@ -2,15 +2,28 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
 import { scenarios } from '../data/scenarios';
+import MiniGame from './MiniGame';
+import { saveSceneChoice, saveFreeText, saveMiniGame } from '../services/firestoreSession';
+import { scoreText } from '../utils/sentiment';
+
+// Mini-games are embedded right after these emotionally loaded scenes, spaced out across
+// the narrative rather than back-to-back — see COPILOT_BUILD_GUIDE.md Section 5.
+const MINIGAME_AFTER_SCENE: Record<number, number> = {
+  6: 1, // after the group conflict scene -> mg_01
+  10: 2, // after the assignment-block scene -> mg_02
+  13: 3, // after the quiet-worry scene -> mg_03
+};
 
 export const Game = () => {
   const navigate = useNavigate();
-  const { currentScene, recordChoice, recordReactionTime, recordText, nextScene } = useGameStore();
-  
+  const { currentScene, sessionId, recordChoice, recordReactionTime, recordText, nextScene } =
+    useGameStore();
+
   const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
   const [freeText, setFreeText] = useState("");
   const [showPrompt, setShowPrompt] = useState(false);
   const [msRemaining, setMsRemaining] = useState<number | null>(null);
+  const [miniGameIndex, setMiniGameIndex] = useState<number | null>(null);
 
   const sceneStartRef = useRef<number>(performance.now());
   const answeredRef = useRef(false);
@@ -46,6 +59,13 @@ export const Game = () => {
         clearInterval(intervalId);
         recordReactionTime(currentScene, limitMs);
         recordChoice(currentScene, timeoutWeight);
+        if (sessionId) {
+          void saveSceneChoice(sessionId, currentScene, {
+            optionId: 'timeout',
+            weight: timeoutWeight,
+            timeMs: limitMs,
+          });
+        }
         goToNextScene();
       }
     }, 100);
@@ -53,6 +73,24 @@ export const Game = () => {
     return () => clearInterval(intervalId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentScene]);
+
+  if (miniGameIndex !== null) {
+    return (
+      <MiniGame
+        sceneContext={`scene_${String(currentScene).padStart(2, '0')}`}
+        onComplete={(result) => {
+          if (sessionId) {
+            void saveMiniGame(sessionId, miniGameIndex, {
+              reactionTimeMs: result.reactionTimeMs,
+              sceneContext: result.sceneContext,
+            });
+          }
+          setMiniGameIndex(null);
+          nextScene();
+        }}
+      />
+    );
+  }
 
   if (!scene) {
     // If we're past scene 15, we should go to summary automatically
@@ -63,12 +101,18 @@ export const Game = () => {
   const goToNextScene = () => {
     if (currentScene >= scenarios.length) {
       navigate('/summary');
+      return;
+    }
+
+    const miniGameNumber = MINIGAME_AFTER_SCENE[currentScene];
+    if (miniGameNumber) {
+      setMiniGameIndex(miniGameNumber);
     } else {
       nextScene();
     }
   };
 
-  const handleChoice = (weight: number) => {
+  const handleChoice = (optionId: string, weight: number) => {
     if (answeredRef.current) return;
     answeredRef.current = true;
 
@@ -76,6 +120,10 @@ export const Game = () => {
     recordReactionTime(currentScene, elapsed);
     recordChoice(currentScene, weight);
     setSelectedChoice(weight);
+
+    if (sessionId) {
+      void saveSceneChoice(sessionId, currentScene, { optionId, weight, timeMs: elapsed });
+    }
 
     if (scene.freeTextPrompt) {
       setShowPrompt(true);
@@ -87,6 +135,9 @@ export const Game = () => {
   const handleNextScene = () => {
     if (showPrompt && freeText.trim().length > 0) {
       recordText(currentScene, freeText);
+      if (sessionId) {
+        void saveFreeText(sessionId, currentScene, freeText, scoreText(freeText));
+      }
     }
 
     goToNextScene();
@@ -117,7 +168,7 @@ export const Game = () => {
           {scene.choices.map((choice) => (
             <button
               key={choice.id}
-              onClick={() => handleChoice(choice.weight)}
+              onClick={() => handleChoice(choice.id, choice.weight)}
               style={{
                 padding: '15px',
                 textAlign: 'left',

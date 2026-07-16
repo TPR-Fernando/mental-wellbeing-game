@@ -29,12 +29,14 @@ interface GameState {
   freeTextAnswers: Record<number, string>; // Maps scene index to text
   sessionId: string | null;
   consentGiven: boolean;
+  wellbeingSummary: string | null;
   recordChoice: (sceneIndex: number, weight: number) => void;
   recordReactionTime: (sceneIndex: number, ms: number) => void;
   recordText: (sceneIndex: number, text: string) => void;
   nextScene: () => void;
   resetGame: () => void;
   setSession: (sessionId: string) => void;
+  setWellbeingSummary: (summary: string) => void;
   medianReactionTime: () => number | null;
 }
 
@@ -48,6 +50,7 @@ export const useGameStore = create<GameState>((set, get) => {
     freeTextAnswers: {},
     sessionId: persisted.sessionId,
     consentGiven: persisted.consentGiven,
+    wellbeingSummary: null,
 
     recordChoice: (sceneIndex, weight) =>
       set((state) => ({
@@ -93,5 +96,7 @@ export const useGameStore = create<GameState>((set, get) => {
         persistSession(sessionId, true);
         return { sessionId, consentGiven: true };
       }),
+
+    setWellbeingSummary: (summary) => set({ wellbeingSummary: summary }),
   };
 });

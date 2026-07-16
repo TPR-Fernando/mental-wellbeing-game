@@ -6,6 +6,8 @@ import { Home } from './components/Home';
 import { Warning } from './components/Warning';
 import { Game } from './components/Game';
 import { Summary } from './components/Summary';
+import { GroundTruth } from './components/GroundTruth';
+import { Completion } from './components/Completion';
 
 function App() {
   return (
@@ -17,6 +19,8 @@ function App() {
           <Route path="/warning" element={<Warning />} />
           <Route path="/game" element={<Game />} />
           <Route path="/summary" element={<Summary />} />
+          <Route path="/questionnaire" element={<GroundTruth />} />
+          <Route path="/completion" element={<Completion />} />
         </Route>
       </Routes>
     </Router>

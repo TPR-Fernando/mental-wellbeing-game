@@ -1,51 +1,167 @@
-import * as functions from "firebase-functions";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import * as admin from "firebase-admin";
-
 admin.initializeApp();
+const db = getFirestore();
 
-// Hard limits can be checked in Firestore or using App Check
-const MAX_CALLS_PER_USER_PER_DAY = 3;
+// See COPILOT_BUILD_GUIDE.md Section 3 and Rule 3: a per-session gate AND a separate
+// global per-day gate, checked before every LLM call.
+const DAILY_LLM_LIMIT = 400; // ~3 calls x 120 participants + buffer
+const PER_SESSION_LLM_LIMIT = 3;
 
-export const generateGameEndInsights = functions.https.onCall(async (data, context) => {
-    // Ensure the user is authenticated (Optional for testing, preferable for Prod)
-    // if (!context.auth) {
-    //   throw new functions.https.HttpsError("unauthenticated", "User must be logged in.");
-    // }
+// Check https://platform.claude.com/docs/en/docs/about-claude/models for the current
+// recommended model ID before deploying — model IDs are periodically deprecated.
+const CLAUDE_MODEL = "claude-sonnet-4-5";
 
-    const { choices, freeTextMap, who5Score, swemwbsScore } = data;
+type Mode = "generate_interview_q1" | "generate_interview_q2" | "generate_summary";
 
-    // TODO: Verify daily limits here against a user usage document in Firestore
+const ALLOWED_MODES: Mode[] = ["generate_interview_q1", "generate_interview_q2", "generate_summary"];
+
+export const nlpService = onCall(
+  { secrets: ["ANTHROPIC_API_KEY"] }, // binds the secret so process.env.ANTHROPIC_API_KEY is populated at runtime
+  async (request) => {
+    const { mode, payload, sessionId } = request.data as {
+      mode: Mode;
+      payload: unknown;
+      sessionId: string;
+    };
+
+    if (!ALLOWED_MODES.includes(mode)) {
+      throw new HttpsError("invalid-argument", "Unknown mode");
+    }
+    if (!sessionId || typeof sessionId !== "string") {
+      throw new HttpsError("invalid-argument", "Missing sessionId");
+    }
+
+    // ── Per-session cap (Rule 3, part 1) ──
+    const sessionRef = db.doc(`sessions/${sessionId}`);
+    const sessionSnap = await sessionRef.get();
+    const sessionCallCount = sessionSnap.exists ? sessionSnap.data()?.llmCallCount ?? 0 : 0;
+    if (sessionCallCount >= PER_SESSION_LLM_LIMIT) {
+      return buildFallback(mode);
+    }
+
+    // ── Global daily cost control gate (Rule 3, part 2) ──
+    const today = new Date().toISOString().split("T")[0];
+    const usageRef = db.doc(`usage/${today}`);
+    const usageSnap = await usageRef.get();
+    const currentCount = usageSnap.exists ? usageSnap.data()?.count ?? 0 : 0;
+
+    if (currentCount >= DAILY_LLM_LIMIT) {
+      return buildFallback(mode); // silent degrade, no error thrown to client
+    }
 
     try {
-        // TODO: Call LLM API (OpenAI/Gemini)
-        // Parse the choices + text into a prompt.
-        // E.g., OpenAI.com/v1/chat/completions ...
-        
-        // Mock Response to simulate LLM AI return
-        const mockResponse = {
-            summary: `Based on your responses, you exhibit strong problem-solving skills but seem to be experiencing some minor stress regarding future academic goals. Your WHO-5 score of ${who5Score} suggests generally positive wellbeing.`,
-            followUpQuestions: [
-                "You mentioned feeling uncertain about the future. What specifically is on your mind?",
-                "How do you usually unwind after a long day of studying?"
-            ]
-        };
-        
-        return { success: true, data: mockResponse };
-
-    } catch (error) {
-        console.error("LLM API Error:", error);
-
-        // Fallback Logic Rule-based
-        const fallbackSummary = `Thank you for playing! Your wellbeing indicators show a WHO-5 score of ${who5Score} and SWEMWBS of ${swemwbsScore}.`;
-        const fallbackQuestions = [
-            "What was the most challenging part of today's story for you?",
-            "How did your choices reflect how you actually feel today?"
-        ];
-
-        return { 
-            success: false, 
-            data: { summary: fallbackSummary, followUpQuestions: fallbackQuestions },
-            message: "Using fallback mechanism due to API limits/errors."
-        };
+      if (!process.env.ANTHROPIC_API_KEY) throw new Error("no_api_key");
+      const result = await callClaude(mode, payload);
+      await usageRef.set({ count: FieldValue.increment(1) }, { merge: true });
+      await sessionRef.set({ llmCallCount: FieldValue.increment(1) }, { merge: true });
+      return result;
+    } catch (err) {
+      console.error(`LLM call failed [${mode}]:`, (err as Error).message);
+      return buildFallback(mode);
     }
-});
+  }
+);
+
+async function callClaude(mode: Mode, payload: unknown): Promise<{ question?: string; summary?: string }> {
+  const commonInstruction =
+    "Avoid clinical language, diagnosis, or alarming phrasing. Keep the tone warm and non-clinical.";
+
+  let userPrompt: string;
+  let maxWords: string;
+
+  if (mode === "generate_interview_q1") {
+    const { choiceSummary } = payload as { choiceSummary: string };
+    userPrompt =
+      `A participant just finished an interactive story about a student's day. Here is a pattern ` +
+      `summary of their choices: "${choiceSummary}". Ask ONE open-ended, warm, non-clinical reflective ` +
+      `question based on this pattern. ${commonInstruction} Keep it under 3 sentences. ` +
+      `Respond with ONLY the question text, nothing else.`;
+    maxWords = "under 3 sentences";
+  } else if (mode === "generate_interview_q2") {
+    const { previousQ, previousA } = payload as { previousQ: string; previousA: string };
+    userPrompt =
+      `You previously asked: "${previousQ}" and the participant answered: "${previousA}". ` +
+      `Ask ONE natural, adaptive follow-up question whose topic genuinely responds to what they said ` +
+      `(not just an acknowledgment sentence bolted onto a fixed topic). ${commonInstruction} ` +
+      `Keep it under 3 sentences. Respond with ONLY the question text, nothing else.`;
+    maxWords = "under 3 sentences";
+  } else {
+    const { who5Predicted, swemwbsPredicted, interviewAnswers } = payload as {
+      who5Predicted: number;
+      swemwbsPredicted: number;
+      interviewAnswers: string[];
+    };
+    userPrompt =
+      `Write a short (80-120 word), warm, non-clinical well-being summary for a participant who just ` +
+      `finished an interactive story and a brief interview. Their indicators: WHO-5 predicted score ` +
+      `${who5Predicted}, SWEMWBS predicted score ${swemwbsPredicted}. Their interview answers: ` +
+      `${interviewAnswers.map((a, i) => `(${i + 1}) ${a}`).join(" ")}. ${commonInstruction} ` +
+      `MUST include a sentence explicitly stating this is not a diagnosis. ` +
+      `Respond with ONLY the summary text, nothing else.`;
+    maxWords = "80-120 words";
+  }
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": process.env.ANTHROPIC_API_KEY as string,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: CLAUDE_MODEL,
+      max_tokens: 300,
+      messages: [
+        {
+          role: "user",
+          content: `${userPrompt} Keep the response ${maxWords}.`,
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Claude API error: ${response.status}`);
+  }
+
+  const data = (await response.json()) as { content?: { type: string; text: string }[] };
+  const text = data.content?.find((block) => block.type === "text")?.text?.trim();
+  if (!text) throw new Error("empty_response");
+
+  if (mode === "generate_summary") {
+    return { summary: text };
+  }
+  return { question: text };
+}
+
+function buildFallback(mode: Mode): { question?: string; summary?: string } {
+  const q1Bank = [
+    "Looking back at your day, what part felt hardest to get through?",
+    "Was there a moment today where you felt more like yourself than usual?",
+    "What's something today that took more effort than it should have?",
+    "If you could redo one moment from today, which would it be?",
+  ];
+  // Note: this fallback bank is necessarily generic/non-adaptive (it's a static array, no LLM call
+  // happened) — an acceptable degradation of the real generate_interview_q2 behavior, which does
+  // genuinely adapt its topic to the participant's previous answer when the LLM call succeeds.
+  const q2Bank = [
+    "Thanks for sharing that. Was there a moment today where you felt more like yourself than usual?",
+    "I appreciate you telling me that. What's something today that took more effort than it should have?",
+    "That makes sense. If you could redo one moment from today, which would it be?",
+  ];
+  const summaryFallback =
+    "Thanks for playing through today's story. Based on your choices and reflections, it looks like " +
+    "you're managing a mix of ups and downs, which is completely normal for university life. This is " +
+    "not a clinical assessment, just a reflective snapshot. If anything felt heavier than usual, " +
+    "consider reaching out to someone you trust.";
+
+  if (mode === "generate_interview_q1") {
+    return { question: q1Bank[Math.floor(Math.random() * q1Bank.length)] };
+  }
+  if (mode === "generate_interview_q2") {
+    return { question: q2Bank[Math.floor(Math.random() * q2Bank.length)] };
+  }
+  return { summary: summaryFallback };
+}

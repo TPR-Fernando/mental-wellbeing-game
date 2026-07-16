@@ -44,16 +44,21 @@ sessions/{sessionId}
   ├── currentScene: number                       // for resuming / detecting drop-off
   │
   ├── choices: {
-  │     scene_01: { optionId: "A"|"B"|"C", weight: -1|0|1, timeMs: number },
+  │     scene_01: { optionId: "A"|"B"|"C"|"D"|"E", weight: -2|-1|0|1|2, timeMs: number },
   │     scene_02: { ... },
-  │     ... scene_15
+  │     ... scene_15                            // scene_11 is the hesitation mini-game: only 2 real
+  │                                              // optionIds ever get chosen manually; a timed-out
+  │                                              // response is written as its own synthetic weight
+  │                                              // (see Section 5a) with timeMs === the timer limit
   │   }
   │
   ├── minigames: {
   │     mg_01: { reactionTimeMs: number, sceneContext: string },
   │     mg_02: { ... },
   │     mg_03: { ... }
-  │   }
+  │   }                                          // "Hold to Focus" motor-inhibition trials (Section 5),
+  │                                              // separate from the per-scene reaction-time baseline
+  │                                              // and from scene_11's own hesitation timing above
   │
   ├── freeTexts: {
   │     scene_01: { text: string, sentimentScore: number },
@@ -218,7 +223,7 @@ function buildFallback(mode, payload) {
 
 ## 4. In-Game Sentiment (Client-Side, No API Call)
 
-At the 5 free-text scenes (3, 6, 10, 13, plus one more — `game_question_set.md` is marked "not finalised" and currently also lists scene 1; confirm the final 5th scene with the supervisor before locking this in), run sentiment analysis **locally in the browser**, not via a Cloud Function.
+At the 5 free-text scenes (3, 6, 10, 13, plus one more — `game_question_set.md` is marked "not finalised" and currently also lists scene 1; confirm the final 5th scene with the supervisor before locking this in), run sentiment analysis **locally in the browser**, not via a Cloud Function. Scene 11 is not one of the free-text scenes — it is the timed hesitation mini-game described in Section 5a.
 
 ```typescript
 // src/utils/sentiment.ts
@@ -238,6 +243,18 @@ export function scoreText(text: string) {
 Add `sentiment` (and `@types/sentiment` for TypeScript) to `frontend/package.json` — it isn't installed yet.
 
 Store only `comparative` in Firestore under `freeTexts.scene_XX.sentimentScore`. Do not store `result.words`, `result.positive`, `result.negative` arrays — keep the write minimal.
+
+---
+
+## 5a. Already Implemented: Scene 11 Hesitation Mini-Game (Narrative-Embedded)
+
+The 15-scene narrative frontend already includes a decisional-hesitation mechanic at Scene 11, built directly into `scenarios.ts` / `Game.tsx` / `gameStore.ts` — this is **not** the Section 5 "Hold to Focus" task below and does not need to be built; it's documented here so the schema and backend code stay consistent with what the client actually sends.
+
+- Scene 11 shows only **2 visible choices** (instead of the usual 5). A visible countdown/progress bar gives the player a fixed time limit (`timedChoice.limitMs`, currently 6000ms) to pick one.
+- If the player doesn't choose in time, the scene auto-advances with a **hidden third outcome**: a synthetic choice recorded with `timedChoice.timeoutWeight` (currently `-2`) and `timeMs` equal to the limit. Participants never see this third option exists.
+- Every scene (not just Scene 11) passively records a per-scene reaction time via `gameStore.recordReactionTime`; `gameStore.medianReactionTime()` computes the participant's own running median pace. This baseline is what makes Scene 11's hesitation meaningful relative to *that individual's* normal response speed, rather than a fixed global cutoff.
+- When wiring Firestore writes (Section 6), persist Scene 11's outcome under `choices.scene_11` like any other scene (including the timed-out case), and consider also writing the running reaction-time baseline (e.g. `reactionTimes: { scene_XX: ms }` or a rolling median) alongside `choices` so this signal isn't lost.
+- Open item, not resolved by this guide: whether the Section 5 "Hold to Focus" motor-inhibition task and this decisional-hesitation mechanic both ship (they measure different constructs — motor/attentional RT vs. decisional avoidance under time pressure), or whether one should be dropped for scope reasons. Confirm with your supervisor before building Section 5.
 
 ---
 
