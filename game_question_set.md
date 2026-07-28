@@ -73,11 +73,11 @@
 
 | Choice | Text | Weight |
 |---|---|---|
-| A | You're properly awake before it even finishes ringing. You get up straight away, feeling good. | +2 |
-| B | A bit sleepy, but nothing major. You get up without much of a fight. | +1 |
-| C | You snooze once, lie there a bit, then get up. Nothing special either way. | 0 |
-| D | You feel groggy and heavy. It takes a couple of snoozes before you actually move. | -1 |
-| E | Your body just refuses to cooperate. You lie there way longer than you should, dreading the day already. | -2 |
+| A | Awake before it even finishes ringing. Straight up, feeling good. | +2 |
+| B | A bit sleepy, but no real fight getting up. | +1 |
+| C | Snooze once, lie there a bit, then get up. Whatever. | 0 |
+| D | Groggy and heavy. Takes a couple snoozes to actually move. | -1 |
+| E | Body just won't cooperate. Dreading the day already. | -2 |
 
 ---
 
@@ -89,11 +89,11 @@
 
 | Choice | Text | Weight |
 |---|---|---|
-| A | You move fast and feel sharp, you even glance over your notes before heading out. | +2 |
-| B | You get through it at a decent pace, nothing to complain about. | +1 |
-| C | You go through the motions. Not fast, not slow, just routine. | 0 |
-| D | Everything feels a bit heavier than it should. You move slowly and cut it close on time. | -1 |
-| E | You can barely get yourself moving. You're rushing at the end and nearly forget your student ID. | -2 |
+| A | Move fast, feel sharp. Even glance over your notes. | +2 |
+| B | Decent pace, nothing to complain about. | +1 |
+| C | Going through the motions. Just routine. | 0 |
+| D | Everything feels heavier than it should. Cutting it close. | -1 |
+| E | Can barely get moving. Nearly forget your student ID. | -2 |
 
 ---
 
@@ -105,11 +105,11 @@
 
 | Choice | Text | Weight |
 |---|---|---|
-| A | There's a lot coming up, but you feel good about it. Like things are actually heading somewhere. | +2 |
-| B | You think about it a little and feel mostly okay, nothing weighing you down. | +1 |
-| C | You don't really dwell on it. You put your earphones in and think about something else. | 0 |
-| D | A familiar worry creeps in. You think about the same things again without really working through them. | -1 |
-| E | The worry doesn't let up. It just keeps circling and you can't shake the unease. | -2 |
+| A | Lots coming up, but it feels like it's heading somewhere good. | +2 |
+| B | Think about it a little, feel mostly okay. | +1 |
+| C | Don't really dwell on it. Earphones in, mind elsewhere. | 0 |
+| D | Same worry creeps back in, never really worked through. | -1 |
+| E | Worry won't let up. Just keeps circling. | -2 |
 
 ---
 
@@ -121,11 +121,11 @@
 
 | Choice | Text | Weight |
 |---|---|---|
-| A | You feel genuinely curious. You lean in and start taking notes without even thinking about it. | +2 |
-| B | You find it reasonably interesting, enough to pay proper attention. | +1 |
-| C | You listen and take notes. You're present, just not particularly invested. | 0 |
-| D | Your attention drifts. Nothing about it feels like it matters much right now. | -1 |
-| E | You can't focus on it at all. Nothing feels interesting or worth the effort lately. | -2 |
+| A | Genuinely curious. Leaning in, taking notes without thinking. | +2 |
+| B | Interesting enough to pay proper attention. | +1 |
+| C | Listening, taking notes. Just not invested. | 0 |
+| D | Attention drifts. Doesn't feel like it matters right now. | -1 |
+| E | Can't focus at all. Nothing feels worth the effort. | -2 |
 
 ---
 
@@ -137,11 +137,11 @@
 
 | Choice | Text | Weight |
 |---|---|---|
-| A | You think it through and raise your hand. You feel sure enough about your answer. | +2 |
-| B | You've got an answer in mind and share it if no one else does first. | +1 |
-| C | You form an answer but hold back, waiting to see what others say. | 0 |
-| D | You had a clear thought a second ago, but you talk yourself out of saying it. | -1 |
-| E | You don't trust your own thinking at all right now, so you stay quiet even though you knew the answer. | -2 |
+| A | Think it through, raise your hand. Feel sure enough. | +2 |
+| B | Got an answer, share it if no one beats you to it. | +1 |
+| C | Form an answer, hold back, wait and see. | 0 |
+| D | Had the thought, talk yourself out of saying it. | -1 |
+| E | Don't trust your own thinking. Stay quiet anyway. | -2 |
 
 ---
 
@@ -153,11 +153,11 @@
 
 | Choice | Text | Weight |
 |---|---|---|
-| A | You bring it up calmly and directly, and suggest splitting the leftover work so everyone's clear on what's next. | +2 |
-| B | You mention it and help sort out a plan, even if it takes a bit of back and forth. | +1 |
-| C | You quietly take on more of the work yourself just to avoid a whole conversation about it. | 0 |
-| D | You're frustrated but don't say much. You pull back and just focus on your own part. | -1 |
-| E | You completely shut down about it. You say nothing, do the bare minimum, and let the resentment build. | -2 |
+| A | Bring it up calmly. Suggest splitting the leftover work. | +2 |
+| B | Mention it, help sort a plan, some back and forth. | +1 |
+| C | Quietly take on more yourself. Avoid the conversation. | 0 |
+| D | Frustrated, but say little. Pull back, focus on your part. | -1 |
+| E | Shut down completely. Bare minimum, resentment builds. | -2 |
 
 ---
 
@@ -169,11 +169,11 @@
 
 | Choice | Text | Weight |
 |---|---|---|
-| A | You join them and it feels easy. The conversation flows and you actually laugh a few times. | +2 |
-| B | You sit with them and enjoy it well enough, even if you're not the loudest one there. | +1 |
-| C | You sit with them but mostly just eat and listen, not really part of it. | 0 |
-| D | You make a small excuse about needing to study and sit somewhere quieter instead. | -1 |
-| E | You avoid it altogether and eat by yourself. Being around people feels like too much right now. | -2 |
+| A | Join them, it's easy. Actually laugh a few times. | +2 |
+| B | Sit with them, enjoy it well enough. | +1 |
+| C | Sit with them, mostly just eat and listen. | 0 |
+| D | Small excuse about studying. Sit somewhere quieter instead. | -1 |
+| E | Avoid it, eat alone. People feel like too much right now. | -2 |
 
 ---
 
@@ -185,11 +185,11 @@
 
 | Choice | Text | Weight |
 |---|---|---|
-| A | You're happy to help. You meet up between classes and walk them through it properly. | +2 |
-| B | You send your notes over and tell them to ask if anything's still unclear. | +1 |
-| C | You say you'll try to help later, without really committing either way. | 0 |
-| D | You feel a bit bad about it, but you say you can't right now, you've got your own work. | -1 |
-| E | You leave the message on read. You don't really feel like dealing with it. | -2 |
+| A | Happy to help. Meet up, walk them through it properly. | +2 |
+| B | Send your notes over, tell them to ask if unclear. | +1 |
+| C | Say you'll try later, without really committing. | 0 |
+| D | Feel a bit bad, but say you can't right now. | -1 |
+| E | Leave it on read. Don't feel like dealing with it. | -2 |
 
 ---
 
@@ -201,11 +201,11 @@
 
 | Choice | Text | Weight |
 |---|---|---|
-| A | You get a second wind. Headphones in, and you're straight into it. | +2 |
-| B | You settle in after a short warm-up and get a decent amount done. | +1 |
-| C | You browse your notes for a bit before easing into something productive. | 0 |
-| D | You feel heavy and unfocused. It takes a while before you actually start. | -1 |
-| E | You're completely drained. You stare at the screen and barely get anything done the whole time. | -2 |
+| A | Second wind. Headphones in, straight into it. | +2 |
+| B | Settle in after a short warm-up, get a decent amount done. | +1 |
+| C | Browse notes a bit before easing into something. | 0 |
+| D | Feel heavy, unfocused. Takes a while to actually start. | -1 |
+| E | Completely drained. Barely get anything done all afternoon. | -2 |
 
 ---
 
@@ -217,11 +217,11 @@
 
 | Choice | Text | Weight |
 |---|---|---|
-| A | You break it into smaller pieces and work through it from a different angle. It takes a while but it clicks. | +2 |
-| B | You take a short break, come back, and manage to work it out reasonably well. | +1 |
-| C | You leave it for now and switch to a different section, planning to come back to it later. | 0 |
-| D | The confusion builds and it's hard to focus. You end up drifting to something else without meaning to. | -1 |
-| E | Your head just fogs up completely. You close the tab and give up on it for the day. | -2 |
+| A | Break it into pieces, work it from a different angle. Takes a while, but it clicks. | +2 |
+| B | Short break, come back, work it out reasonably well. | +1 |
+| C | Leave it, switch to another section for now. | 0 |
+| D | Confusion builds. Drift to something else without meaning to. | -1 |
+| E | Head fogs up completely. Close the tab, give up for the day. | -2 |
 
 ---
 
@@ -255,11 +255,11 @@ Unlike the other 14 scenes, this one runs on a visible countdown instead of a pl
 
 | Choice | Text | Weight |
 |---|---|---|
-| A | You go, and it feels easy. You're actually looking forward to the break. | +2 |
-| B | You go and enjoy it, even with the work at the back of your mind. | +1 |
-| C | You go, but there's a low hum of guilt the whole time. You keep checking your phone. | 0 |
-| D | You say no. It just feels like more effort than you have right now. | -1 |
-| E | You turn it down and don't really want to see anyone. You'd rather just be alone. | -2 |
+| A | Go, it's easy. Actually looking forward to it. | +2 |
+| B | Go, enjoy it, work still nagging at the back of your mind. | +1 |
+| C | Go, but a low hum of guilt. Keep checking your phone. | 0 |
+| D | Say no. Feels like more effort than you have right now. | -1 |
+| E | Turn it down. Don't want to see anyone right now. | -2 |
 
 ---
 
@@ -271,11 +271,11 @@ Unlike the other 14 scenes, this one runs on a visible countdown instead of a pl
 
 | Choice | Text | Weight |
 |---|---|---|
-| A | You notice it, sit with it for a second, and let it go pretty easily. | +2 |
-| B | You think about it for a bit, then get distracted by something else and move on. | +1 |
-| C | It stays with you for a while before it eventually fades on its own. | 0 |
-| D | It's hard to shake. You keep coming back to it even when you try to think about something else. | -1 |
-| E | It spirals. One worry pulls in another and the feeling sticks around for a long time. | -2 |
+| A | Notice it, sit with it a second, let it go pretty easily. | +2 |
+| B | Think about it a bit, then get distracted, move on. | +1 |
+| C | Stays with you a while, fades on its own eventually. | 0 |
+| D | Hard to shake. Keep coming back to it. | -1 |
+| E | Spirals. One worry pulls in another, sticks around. | -2 |
 
 ---
 
@@ -287,11 +287,11 @@ Unlike the other 14 scenes, this one runs on a visible countdown instead of a pl
 
 | Choice | Text | Weight |
 |---|---|---|
-| A | Genuinely good. There were stressful bits, but overall you feel fine about how it went. | +2 |
-| B | Pretty decent. A few rough patches, but nothing that really got you down. | +1 |
-| C | Mixed. Some parts were fine, some weren't. Hard to sum up either way. | 0 |
-| D | Not great. The day felt heavier than usual and it's stuck with you. | -1 |
-| E | Flat, low, hard to explain. The day just felt like a weight the whole way through. | -2 |
+| A | Genuinely good. Stressful bits, but overall fine. | +2 |
+| B | Pretty decent. A few rough patches, nothing major. | +1 |
+| C | Mixed. Some parts fine, some not. Hard to sum up. | 0 |
+| D | Not great. Heavier than usual, still stuck with you. | -1 |
+| E | Flat, low. Felt like a weight the whole day. | -2 |
 
 ---
 
@@ -303,11 +303,11 @@ Unlike the other 14 scenes, this one runs on a visible countdown instead of a pl
 
 | Choice | Text | Weight |
 |---|---|---|
-| A | Your body and mind feel properly settled. You're ready to sleep. | +2 |
-| B | You feel fairly calm. Your mind eases fairly quickly. | +1 |
-| C | Your mind wanders for a bit before it eventually quiets down. | 0 |
-| D | You're restless. It takes a long time before your thoughts settle at all. | -1 |
-| E | Your thoughts keep racing. You lie there for ages, not able to switch off. | -2 |
+| A | Body and mind properly settled. Ready to sleep. | +2 |
+| B | Fairly calm. Mind eases pretty quickly. | +1 |
+| C | Mind wanders a bit before quieting down. | 0 |
+| D | Restless. Takes a long time for thoughts to settle. | -1 |
+| E | Thoughts keep racing. Lying there for ages, can't switch off. | -2 |
 
 ---
 
@@ -348,17 +348,3 @@ Both LLM calls (plus one for `generate_summary`) count toward the 3-call-per-ses
 - SWEMWBS predicted score: sum of 7 item weights (range -14 to +14), rescaled to the official 7–35 metric range via `sum + 21` (linear, since 7 items × ±2 maps directly onto that span).
 - Every scene also logs raw reaction time in milliseconds (scene render → choice tap), used to build each participant's own median decision pace. Scene 11's hesitation is judged relative to that personal baseline, not a fixed cutoff, see Scene 11 above for why.
 - These predicted scores are compared against the actual WHO-5 and SWEMWBS questionnaire responses collected at the end of the session.
-
----
-
-## Notes for Supervisor Review
-
-1. **Weighting logic is directional, not diagnostic.** A single -1 or -2 does not indicate poor well-being, the signal comes from patterns across the full set.
-2. **Dual measurement items** (W2, W3, S7) are deliberate. They provide test-retest signal within a single session and give the ML model more variance to learn from.
-3. **Free-text placement** is emotionally calibrated — prompts appear at scenes involving morning state, future thinking, conflict, academic difficulty, and quiet worry. These are the most psychologically loaded moments.
-4. **Scene 14 is unusual** — it is the only scene that explicitly asks the player to reflect on "how you felt today." This is intentionally placed late, after the player has been in-game for the full duration. Consider whether this level of directness is appropriate or whether it should be reframed as a more indirect narrative moment.
-5. **All choice text should be reviewed** by the supervising psychotherapist for ecological validity — particularly Scenes 6, 10, and 13 which touch on conflict avoidance, cognitive difficulty, and rumination.
-6. **The post-game AI interview is intentionally short (2 questions)** to stay within the 3-call-per-session LLM cap (Q1 + Q2 + summary). Q2's adaptive nature means its exact wording can't be reviewed in advance the way the fixed scene/free-text content can, the prompt sent to the model (not shown here) should be reviewed instead, since that's what constrains its tone and boundaries.
-7. **Options widened from 3 to 5 per scene.** This brings the game's resolution closer to the real WHO-5 (6-point) and SWEMWBS (5-point) response scales instead of collapsing everything into positive/neutral/negative. Reading load increases somewhat (75 short lines instead of 45), option text was kept to one short sentence each to offset that.
-8. **Scene 11 was converted into a timed forced-choice mini-game** (2 visible options plus a hidden timeout outcome) rather than staying a plain 3-option scene, see the dedicated writeup under Scene 11 above. This is a new, not-yet-reviewed mechanic and should get its own look from the supervisor, particularly whether a countdown under social pressure is an appropriate thing to simulate for this population.
-9. **Tone pass:** all scene and choice text was rewritten to read like an internal narration a student would actually think in (shorter sentences, no em dashes, less literary phrasing) rather than AI-generated prose, while keeping each option's polarity mapped to the same scale item as before.

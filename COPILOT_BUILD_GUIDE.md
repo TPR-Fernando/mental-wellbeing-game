@@ -53,12 +53,12 @@ sessions/{sessionId}
   │   }
   │
   ├── minigames: {
-  │     mg_01: { reactionTimeMs: number, sceneContext: string },
+  │     mg_01: { word: string, weight: -1|0|1, decisionTimeMs: number, sceneContext: string },
   │     mg_02: { ... },
   │     mg_03: { ... }
-  │   }                                          // "Hold to Focus" motor-inhibition trials (Section 5),
-  │                                              // separate from the per-scene reaction-time baseline
-  │                                              // and from scene_11's own hesitation timing above
+  │   }                                          // "Word Choice" word-selection trials (Section 5),
+  │                                              // weights (-1/0/+1) feed only into AI summary tone,
+  │                                              // never mixed into the real groundTruth questionnaire
   │
   ├── freeTexts: {
   │     scene_01: { text: string, sentimentScore: number },
@@ -156,7 +156,7 @@ export const nlpService = onCall(
 
 async function callClaude(mode: string, payload: unknown) {
   // Use fetch to https://api.anthropic.com/v1/messages
-  // model: "claude-sonnet-5" (check https://platform.claude.com/docs/en/docs/about-claude/models for the current recommended ID before deploying — model IDs are periodically deprecated)
+  // model: "claude-sonnet-5" (dateless pinned snapshot per Claude 4.6+ versioning; check https://platform.claude.com/docs/en/docs/about-claude/models for current models)
   // max_tokens: 300
   // Build the prompt based on `mode`:
   //
@@ -250,7 +250,7 @@ Store only `comparative` in Firestore under `freeTexts.scene_XX.sentimentScore`.
 
 The 15-scene narrative frontend already includes a decisional-hesitation mechanic at Scene 11, built directly into `scenarios.ts` / `Game.tsx` / `gameStore.ts` — this is **not** the Section 5 "Hold to Focus" task below and does not need to be built; it's documented here so the schema and backend code stay consistent with what the client actually sends.
 
-- Scene 11 shows only **2 visible choices** (instead of the usual 5). A visible countdown/progress bar gives the player a fixed time limit (`timedChoice.limitMs`, currently 6000ms) to pick one.
+- Scene 11 shows only **2 visible choices** (instead of the usual 5). A visible countdown/progress bar gives the player a fixed time limit (`timedChoice.limitMs`, currently 12000ms) to pick one.
 - If the player doesn't choose in time, the scene auto-advances with a **hidden third outcome**: a synthetic choice recorded with `timedChoice.timeoutWeight` (currently `-2`) and `timeMs` equal to the limit. Participants never see this third option exists.
 - Every scene (not just Scene 11) passively records a per-scene reaction time via `gameStore.recordReactionTime`; `gameStore.medianReactionTime()` computes the participant's own running median pace. This baseline is what makes Scene 11's hesitation meaningful relative to *that individual's* normal response speed, rather than a fixed global cutoff.
 - When wiring Firestore writes (Section 6), persist Scene 11's outcome under `choices.scene_11` like any other scene (including the timed-out case), and consider also writing the running reaction-time baseline (e.g. `reactionTimes: { scene_XX: ms }` or a rolling median) alongside `choices` so this signal isn't lost.
@@ -258,110 +258,90 @@ The 15-scene narrative frontend already includes a decisional-hesitation mechani
 
 ---
 
-## 5. Mini-Game: Response Inhibition Task
+## 5. Mini-Game: Word Choice Task
 
 ### Design Spec
 
-The mini-game measures **cognitive control under load**: the player holds an action, gets an unpredictable stop cue, and their reaction time to that cue is the signal.
+The mini-game captures reflective resonance through a simple word-selection mechanic: the player chooses which of three contextually relevant words best describes their feeling in that moment.
 
-**Mechanic:** "Hold to Focus" bar.
+**Mechanic:** "Word Choice" — three single-word options.
 
-1. A progress bar fills while the player holds down a button (mouse) or presses-and-holds a touch target (mobile).
-2. At a **randomised point between 45% and 80%** of the fill, a visual + short vibration/audio cue fires ("STOP" flashes, bar turns red).
-3. The player must release as fast as possible.
-4. Reaction time = `releaseTimestamp - cueTimestamp`, in milliseconds.
-5. If they release *before* the cue (impatient) or don't release within 1000ms after the cue (missed), flag the trial as invalid but still store the raw time with a flag.
+1. Show a brief prompt and 3 single-word buttons (e.g., "Right now, I feel...").
+2. Each word has a weight: -1 (lower wellbeing tone), 0 (neutral), +1 (higher wellbeing tone), distributed across the 3 options so each slot carries one weight.
+3. Selection is **mandatory** — the player must tap one word to continue (no skip option).
+4. No timer or time limit; record `decisionTimeMs` (elapsed time from prompt shown to word tapped) for research purposes only — it is uncapped and purely informational.
+5. After all 3 instances complete, write to Firestore under `minigames.mg_0X` immediately upon each completion (see Section 6 on incremental writes).
 
-**Embed 3 mini-games total**, placed right after emotionally loaded narrative scenes (e.g., after the group conflict scene, after the assignment-block scene, after the quiet-worry scene). Do not place them back-to-back — space them out across the narrative.
+**Embed 3 mini-games total**, placed right after emotionally loaded narrative scenes (specifically after scenes 6, 10, 13). Do not place them back-to-back — space them out across the narrative.
 
-### Implementation Skeleton
+**Word Triples** (thematically tied to preceding scene, no scale-name leakage in visible text):
+- After Scene 6 (Group Project Conflict): "Drained" (-1) / "Steady" (0) / "Encouraged" (+1)
+- After Scene 10 (Assignment Block): "Stuck" (-1) / "Focused" (0) / "Motivated" (+1)
+- After Scene 13 (Quiet Moment of Worry): "Uneasy" (-1) / "Calm" (0) / "Reassured" (+1)
 
-> **Note:** `phase` is tracked in a `ref`, not read from `useState` inside the `requestAnimationFrame` loop. Deriving the loop's branching logic from state via a `useCallback([phase])` chain (as an earlier draft of this guide did) creates a stale-closure bug — `tick`/`startHold` end up capturing the `phase` value from when they were created, not the live value, so the cue transition can be missed. Use a ref for anything read inside `tick`, and `setPhase` only to drive rendering.
+### Implementation Notes
 
 ```tsx
-// src/components/MiniGame.tsx
-import { useState, useRef, useCallback, useEffect } from 'react';
+// src/components/WordChoice.tsx
+import { useState, useRef, useCallback } from 'react';
 
-const FILL_DURATION_MS = 2200; // time to fill 100% if never released
-const CUE_MIN_PCT = 0.45;
-const CUE_MAX_PCT = 0.80;
-
-type Phase = 'idle' | 'filling' | 'cued' | 'done';
-
-interface MiniGameProps {
+interface WordChoiceProps {
+  prompt: string;
+  words: Array<{ text: string; weight: -1 | 0 | 1 }>;
   sceneContext: string;
-  onComplete: (result: { reactionTimeMs: number; valid: boolean; sceneContext: string }) => void;
+  onComplete: (result: { word: string; weight: -1 | 0 | 1; decisionTimeMs: number; sceneContext: string }) => void;
 }
 
-export default function MiniGame({ sceneContext, onComplete }: MiniGameProps) {
-  const [phase, setPhase] = useState<Phase>('idle'); // drives rendering only
-  const [progress, setProgress] = useState(0);
-  const phaseRef = useRef<Phase>('idle'); // read inside the rAF loop — always current
-  const startTimeRef = useRef<number | null>(null);
-  const cueTimeRef = useRef<number | null>(null);
-  const cueThresholdRef = useRef<number | null>(null);
-  const rafRef = useRef<number | null>(null);
+export default function WordChoice({ prompt, words, sceneContext, onComplete }: WordChoiceProps) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const startTimeRef = useRef<number>(performance.now());
 
-  const setPhaseSynced = useCallback((next: Phase) => {
-    phaseRef.current = next;
-    setPhase(next);
-  }, []);
+  const handleSelect = useCallback(
+    (word: string, weight: -1 | 0 | 1) => {
+      if (selected) return; // prevent double-tap
+      setSelected(word);
+      const decisionTimeMs = performance.now() - startTimeRef.current;
+      onComplete({ word, weight, decisionTimeMs, sceneContext });
+    },
+    [selected, sceneContext, onComplete]
+  );
 
-  const tick = useCallback(() => {
-    const elapsed = performance.now() - (startTimeRef.current ?? 0);
-    const pct = Math.min(elapsed / FILL_DURATION_MS, 1);
-    setProgress(pct);
-
-    if (phaseRef.current !== 'cued' && pct >= (cueThresholdRef.current ?? 1)) {
-      cueTimeRef.current = performance.now();
-      setPhaseSynced('cued'); // triggers the STOP visual in render
-    }
-    if (pct < 1) {
-      rafRef.current = requestAnimationFrame(tick);
-    }
-  }, [setPhaseSynced]);
-
-  const startHold = useCallback(() => {
-    startTimeRef.current = performance.now();
-    cueThresholdRef.current = CUE_MIN_PCT + Math.random() * (CUE_MAX_PCT - CUE_MIN_PCT);
-    setPhaseSynced('filling');
-    rafRef.current = requestAnimationFrame(tick);
-  }, [setPhaseSynced, tick]);
-
-  const release = useCallback(() => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    const releaseTime = performance.now();
-
-    let reactionTimeMs: number;
-    let valid = true;
-
-    if (phaseRef.current === 'cued' && cueTimeRef.current !== null) {
-      reactionTimeMs = releaseTime - cueTimeRef.current;
-    } else {
-      // released before cue fired — invalid trial, still record
-      valid = false;
-      reactionTimeMs = -1;
-    }
-
-    setPhaseSynced('done');
-    onComplete({ reactionTimeMs, valid, sceneContext });
-  }, [onComplete, sceneContext, setPhaseSynced]);
-
-  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
-
-  // Render: a bar that fills, turns red + "STOP" text when phase === 'cued'
-  // Bind startHold to onMouseDown/onTouchStart, release to onMouseUp/onTouchEnd
-  // IMPORTANT: also handle onMouseLeave/onTouchCancel as an early release (valid=false)
+  return (
+    <div style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
+      <p style={{ fontSize: '1.1rem', marginBottom: '2rem', color: '#333' }}>{prompt}</p>
+      <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+        {words.map(({ text, weight }) => (
+          <button
+            key={text}
+            onClick={() => handleSelect(text, weight)}
+            disabled={selected !== null}
+            style={{
+              padding: '12px 24px',
+              fontSize: '1rem',
+              borderRadius: '8px',
+              border: selected === text ? '3px solid #333' : '2px solid #ccc',
+              backgroundColor: selected === text ? '#f0f0f0' : '#fff',
+              cursor: selected ? 'default' : 'pointer',
+              opacity: selected && selected !== text ? 0.5 : 1,
+              transition: 'all 0.2s',
+            }}
+          >
+            {text}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 ```
 
-**Copilot instructions for this component:**
-- Use `performance.now()`, never `Date.now()`, for anything reaction-time related — it's higher precision and monotonic.
-- Use `requestAnimationFrame`, not `setInterval`, for the fill animation.
-- Read `phase` from a ref inside the rAF loop (`phaseRef`), not from React state directly, to avoid stale-closure bugs across animation frames.
-- The visual/haptic cue must be unambiguous: color change AND text change AND (on mobile) `navigator.vibrate(80)` if available (note: iOS Safari does not support the Vibration API at all — treat it as a progressive enhancement, not a dependency).
-- Do not let the player see the fill speed varies across trials in a way that lets them "learn" the cue timing — the 45–80% randomisation already handles this, just don't add any pattern like always increasing.
-- After all 3 mini-games are done, write to Firestore under `minigames.mg_0X` immediately after each one completes (see Section 6 on incremental writes), not batched at the end.
+**Implementation checklist:**
+- Use `performance.now()` for `decisionTimeMs` timing — not `Date.now()`.
+- Store `startTimeRef.current` on mount so the ref survives re-renders (set it once, read once on click).
+- Selection is mandatory: disable all buttons once one is clicked; no second selection or skip allowed.
+- Call `onComplete` immediately after a word is tapped; do not batch.
+- Write to Firestore under `minigames.mg_0X` with shape `{ word, weight, decisionTimeMs, sceneContext }` (no `valid` flag or `reactionTimeMs` — those belonged to the old "Hold to Focus" task).
+- Weights (-1/0/+1) are purely informational and do NOT appear in participant-facing variable names or comments; they feed only into Summary.tsx's internal adjustment to the AI summary, never the real groundTruth questionnaire.
 
 ---
 

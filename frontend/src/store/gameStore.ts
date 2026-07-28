@@ -27,12 +27,14 @@ interface GameState {
   choices: Record<number, number>; // Maps scene index to weight (-2 to +2)
   reactionTimes: Record<number, number>; // Maps scene index to ms from scene render to choice tap
   freeTextAnswers: Record<number, string>; // Maps scene index to text
+  miniGameWeights: Record<number, -1 | 0 | 1>; // Maps mini-game index (1-3) to weight; feeds only into AI summary
   sessionId: string | null;
   consentGiven: boolean;
   wellbeingSummary: string | null;
   recordChoice: (sceneIndex: number, weight: number) => void;
   recordReactionTime: (sceneIndex: number, ms: number) => void;
   recordText: (sceneIndex: number, text: string) => void;
+  recordMiniGameWeight: (miniGameIndex: number, weight: -1 | 0 | 1) => void;
   nextScene: () => void;
   resetGame: () => void;
   setSession: (sessionId: string) => void;
@@ -48,6 +50,7 @@ export const useGameStore = create<GameState>((set, get) => {
     choices: {},
     reactionTimes: {},
     freeTextAnswers: {},
+    miniGameWeights: {},
     sessionId: persisted.sessionId,
     consentGiven: persisted.consentGiven,
     wellbeingSummary: null,
@@ -65,6 +68,11 @@ export const useGameStore = create<GameState>((set, get) => {
     recordText: (sceneIndex, text) =>
       set((state) => ({
         freeTextAnswers: { ...state.freeTextAnswers, [sceneIndex]: text },
+      })),
+
+    recordMiniGameWeight: (miniGameIndex, weight) =>
+      set((state) => ({
+        miniGameWeights: { ...state.miniGameWeights, [miniGameIndex]: weight },
       })),
 
     // Used to judge Scene 11's hesitation relative to this participant's own pace,
@@ -89,6 +97,7 @@ export const useGameStore = create<GameState>((set, get) => {
         choices: {},
         reactionTimes: {},
         freeTextAnswers: {},
+        miniGameWeights: {},
       }),
 
     setSession: (sessionId) =>

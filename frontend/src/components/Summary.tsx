@@ -29,7 +29,7 @@ type Stage =
 
 export const Summary = () => {
   const navigate = useNavigate();
-  const { choices, sessionId, setWellbeingSummary } = useGameStore();
+  const { choices, miniGameWeights, sessionId, setWellbeingSummary } = useGameStore();
 
   const [stage, setStage] = useState<Stage>('loading_q1');
   const [q1, setQ1] = useState('');
@@ -67,11 +67,23 @@ export const Summary = () => {
       }
     });
 
+    // Fold in mini-game weights (-3..+3 range from 3 games × -1/0/+1) as a small adjustment
+    // to the AI summary tone. This does NOT go into the real groundTruth questionnaire.
+    const miniGameTotal = Object.values(miniGameWeights).reduce((sum, w) => sum + w, 0);
+    who5Raw += miniGameTotal;
+    swemwbsRaw += miniGameTotal;
+
     // Weights range -2..+2 per item (5 items for WHO-5, 7 for SWEMWBS), so who5Raw spans
-    // -10..+10 and swemwbsRaw spans -14..+14. Rescale to match the real instruments' score
-    // ranges: WHO-5 is 0-100, SWEMWBS metric is 7-35.
-    const who5 = ((who5Raw + 10) / 20) * 100;
-    const swemwbs = swemwbsRaw + 21;
+    // -10..+10 and swemwbsRaw spans -14..+14. After mini-game adjustment, ranges widen but stay bounded.
+    // Rescale to match the real instruments' score ranges: WHO-5 is 0-100, SWEMWBS metric is 7-35.
+    // Clamp to valid ranges to ensure graceful degradation if mini-games push extremes.
+    let who5 = ((who5Raw + 10) / 20) * 100;
+    let swemwbs = swemwbsRaw + 21;
+    
+    // Clamp to valid ranges
+    who5 = Math.max(0, Math.min(100, who5));
+    swemwbs = Math.max(7, Math.min(35, swemwbs));
+    
     setWho5Predicted(who5);
     setSwemwbsPredicted(swemwbs);
 

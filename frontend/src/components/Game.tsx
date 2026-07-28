@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
 import { scenarios } from '../data/scenarios';
-import MiniGame from './MiniGame';
+import WordChoice from './WordChoice';
+import { wordChoices } from '../data/wordChoices';
 import { saveSceneChoice, saveFreeText, saveMiniGame } from '../services/firestoreSession';
 import { scoreText } from '../utils/sentiment';
 
@@ -16,7 +17,7 @@ const MINIGAME_AFTER_SCENE: Record<number, number> = {
 
 export const Game = () => {
   const navigate = useNavigate();
-  const { currentScene, sessionId, recordChoice, recordReactionTime, recordText, nextScene } =
+  const { currentScene, sessionId, recordChoice, recordReactionTime, recordText, recordMiniGameWeight, nextScene } =
     useGameStore();
 
   const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
@@ -75,13 +76,21 @@ export const Game = () => {
   }, [currentScene]);
 
   if (miniGameIndex !== null) {
+    const choiceSet = wordChoices[miniGameIndex];
     return (
-      <MiniGame
-        sceneContext={`scene_${String(currentScene).padStart(2, '0')}`}
+      <WordChoice
+        prompt={choiceSet.prompt}
+        words={choiceSet.words}
+        sceneContext={choiceSet.sceneContext}
         onComplete={(result) => {
+          recordReactionTime(currentScene, result.decisionTimeMs);
+          recordChoice(currentScene, result.weight);
+          recordMiniGameWeight(miniGameIndex, result.weight);
           if (sessionId) {
             void saveMiniGame(sessionId, miniGameIndex, {
-              reactionTimeMs: result.reactionTimeMs,
+              word: result.word,
+              weight: result.weight,
+              decisionTimeMs: result.decisionTimeMs,
               sceneContext: result.sceneContext,
             });
           }
@@ -144,65 +153,74 @@ export const Game = () => {
   };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
-      <h2>Scene {scene.id}: {scene.title}</h2>
-      <p style={{ fontSize: '1.1rem', marginBottom: '2rem' }}>{scene.text}</p>
+    <div className="game-wrapper">
+      <div className="scene-card">
+        {/* Header: label + progress dots */}
+        <div className="scene-header">
+          <span className="scene-label">Scene {scene.id} of {scenarios.length}</span>
+          <div className="scene-dots">
+            {scenarios.map((_, i) => (
+              <div key={i} className={`scene-dot${i < currentScene ? ' active' : ''}`} />
+            ))}
+          </div>
+        </div>
 
-      {scene.timedChoice && msRemaining !== null && (
-        <div style={{ marginBottom: '1rem' }}>
-          <div style={{ height: '8px', background: '#ddd', borderRadius: '4px', overflow: 'hidden' }}>
+        {/* Title */}
+        <h2 className="scene-title">{scene.title}</h2>
+
+        {/* Countdown timer for timed scenes */}
+        {scene.timedChoice && msRemaining !== null && (
+          <div className="timer-track">
             <div
+              className="timer-fill"
               style={{
-                height: '100%',
                 width: `${(msRemaining / scene.timedChoice.limitMs) * 100}%`,
-                background: msRemaining < scene.timedChoice.limitMs * 0.3 ? '#e53935' : '#43a047',
-                transition: 'width 0.1s linear, background 0.2s linear',
+                background:
+                  msRemaining < scene.timedChoice.limitMs * 0.3
+                    ? '#e53935'
+                    : 'linear-gradient(90deg, #7c5cfc, #5b8fff)',
               }}
             />
           </div>
-        </div>
-      )}
+        )}
 
-      {!showPrompt ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {scene.choices.map((choice) => (
-            <button
-              key={choice.id}
-              onClick={() => handleChoice(choice.id, choice.weight)}
-              style={{
-                padding: '15px',
-                textAlign: 'left',
-                fontSize: '1rem',
-                cursor: 'pointer',
-                backgroundColor: '#f5f5f5',
-                color: '#000000',
-                border: '2px solid #b0b0b0',
-                borderRadius: '5px',
-                fontWeight: '500'
-              }}
-            >
-              {choice.text}
+        {/* Narrative text */}
+        <div className="scene-text-box">
+          <p>{scene.text}</p>
+        </div>
+
+        {/* Choices or free-text reflection */}
+        {!showPrompt ? (
+          <>
+            <p className="choices-heading">How do you respond?</p>
+            <div className="choices-container">
+              {scene.choices.map((choice, idx) => (
+                <button
+                  key={choice.id}
+                  className={`choice-bubble${idx % 2 === 1 ? ' right' : ''}`}
+                  onClick={() => handleChoice(choice.id, choice.weight)}
+                >
+                  {choice.text}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="free-text-section">
+            <p className="free-text-label">{scene.freeTextPrompt}</p>
+            <p className="free-text-optional">Optional — share your thoughts</p>
+            <textarea
+              className="free-text-area"
+              value={freeText}
+              onChange={(e) => setFreeText(e.target.value)}
+              placeholder="Type your thoughts here…"
+            />
+            <button className="continue-btn" onClick={handleNextScene}>
+              Continue →
             </button>
-          ))}
-        </div>
-      ) : (
-        <div style={{ marginTop: '20px' }}>
-          <p><strong>{scene.freeTextPrompt}</strong></p>
-          <p style={{ fontSize: '0.9rem', color: '#666' }}>(Optional)</p>
-          <textarea
-            value={freeText}
-            onChange={(e) => setFreeText(e.target.value)}
-            style={{ width: '100%', height: '100px', padding: '10px', marginTop: '10px' }}
-            placeholder="Type your thoughts here..."
-          />
-          <button 
-            onClick={handleNextScene}
-            style={{ padding: '10px 20px', marginTop: '15px', cursor: 'pointer' }}
-          >
-            Continue
-          </button>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

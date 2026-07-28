@@ -9,16 +9,16 @@ const db = getFirestore();
 const DAILY_LLM_LIMIT = 400; // ~3 calls x 120 participants + buffer
 const PER_SESSION_LLM_LIMIT = 3;
 
-// Check https://platform.claude.com/docs/en/docs/about-claude/models for the current
-// recommended model ID before deploying — model IDs are periodically deprecated.
-const CLAUDE_MODEL = "claude-sonnet-4-5";
+// Check https://ai.google.dev/models for the current recommended model ID.
+// gemini-1.5-flash is fast, cheap, and ideal for short-form generation.
+const GEMINI_MODEL = "gemini-1.5-flash";
 
 type Mode = "generate_interview_q1" | "generate_interview_q2" | "generate_summary";
 
 const ALLOWED_MODES: Mode[] = ["generate_interview_q1", "generate_interview_q2", "generate_summary"];
 
 export const nlpService = onCall(
-  { secrets: ["ANTHROPIC_API_KEY"] }, // binds the secret so process.env.ANTHROPIC_API_KEY is populated at runtime
+  { secrets: ["GOOGLE_GEMINI_API_KEY"] }, // binds the secret so process.env.GOOGLE_GEMINI_API_KEY is populated at runtime
   async (request) => {
     const { mode, payload, sessionId } = request.data as {
       mode: Mode;
@@ -52,8 +52,8 @@ export const nlpService = onCall(
     }
 
     try {
-      if (!process.env.ANTHROPIC_API_KEY) throw new Error("no_api_key");
-      const result = await callClaude(mode, payload);
+      if (!process.env.GOOGLE_GEMINI_API_KEY) throw new Error("no_api_key");
+      const result = await callGemini(mode, payload);
       await usageRef.set({ count: FieldValue.increment(1) }, { merge: true });
       await sessionRef.set({ llmCallCount: FieldValue.increment(1) }, { merge: true });
       return result;
@@ -64,7 +64,7 @@ export const nlpService = onCall(
   }
 );
 
-async function callClaude(mode: Mode, payload: unknown): Promise<{ question?: string; summary?: string }> {
+async function callGemini(mode: Mode, payload: unknown): Promise<{ question?: string; summary?: string }> {
   const commonInstruction =
     "Avoid clinical language, diagnosis, or alarming phrasing. Keep the tone warm and non-clinical.";
 
@@ -103,31 +103,38 @@ async function callClaude(mode: Mode, payload: unknown): Promise<{ question?: st
     maxWords = "80-120 words";
   }
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": process.env.ANTHROPIC_API_KEY as string,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: CLAUDE_MODEL,
-      max_tokens: 300,
-      messages: [
-        {
-          role: "user",
-          content: `${userPrompt} Keep the response ${maxWords}.`,
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${process.env.GOOGLE_GEMINI_API_KEY}`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `${userPrompt} Keep the response ${maxWords}.`,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          maxOutputTokens: 300,
         },
-      ],
-    }),
-  });
+      }),
+    }
+  );
 
   if (!response.ok) {
-    throw new Error(`Claude API error: ${response.status}`);
+    throw new Error(`Gemini API error: ${response.status}`);
   }
 
-  const data = (await response.json()) as { content?: { type: string; text: string }[] };
-  const text = data.content?.find((block) => block.type === "text")?.text?.trim();
+  const data = (await response.json()) as {
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
+  };
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
   if (!text) throw new Error("empty_response");
 
   if (mode === "generate_summary") {

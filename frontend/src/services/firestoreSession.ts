@@ -61,7 +61,9 @@ export async function saveFreeText(
 }
 
 export interface MiniGameResult {
-  reactionTimeMs: number;
+  word: string;
+  weight: -1 | 0 | 1;
+  decisionTimeMs: number;
   sceneContext: string;
 }
 

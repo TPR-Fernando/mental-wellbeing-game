@@ -50,8 +50,14 @@
   }
 }
 
+html,
 body {
   margin: 0;
+  min-height: 100%;
+}
+
+body {
+  min-height: 100dvh;
 }
 
 #root {
@@ -111,4 +117,732 @@ code {
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
+}
+
+/* ===================================================================
+   GAME THEME — Mental Wellbeing Narrative
+   Glassmorphism + speech-bubble choices + ambient gradient backdrop
+   =================================================================== */
+
+body {
+  /* gradient via a fixed pseudo-element — avoids iOS background-attachment:fixed bug */
+  background: linear-gradient(135deg, #f0e8ff 0%, #e0eeff 40%, #e4f7ef 70%, #fff5e8 100%);
+  background-attachment: fixed;
+}
+
+/* Fallback for browsers/devices that ignore background-attachment:fixed (iOS Safari) */
+@supports not (background-attachment: fixed) {
+  body {
+    background-attachment: scroll;
+  }
+}
+
+#root {
+  border-inline: none;
+  background: transparent;
+  /* Ensure root always covers the full viewport */
+  min-height: 100dvh;
+}
+
+/* ── Ambient background blobs ─────────────────────────────────────── */
+.game-blob {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.38;
+  pointer-events: none;
+  z-index: -1;
+  animation: blob-drift 14s ease-in-out infinite alternate;
+}
+.game-blob-1 {
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, #c4b5fd, #a78bfa);
+  top: -160px;
+  left: -160px;
+}
+.game-blob-2 {
+  width: 440px;
+  height: 440px;
+  background: radial-gradient(circle, #93c5fd, #60a5fa);
+  bottom: -130px;
+  right: -130px;
+  animation-delay: -7s;
+}
+.game-blob-3 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, #86efac, #34d399);
+  top: 42%;
+  left: 56%;
+  animation-delay: -3.5s;
+}
+@keyframes blob-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(28px, 18px) scale(1.09); }
+}
+
+/* ── Main game wrapper ────────────────────────────────────────────── */
+.game-wrapper {
+  padding: 1.5rem 1rem 3rem;
+  max-width: 660px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* ── Glassmorphism scene card ─────────────────────────────────────── */
+.scene-card {
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1.5px solid rgba(255, 255, 255, 0.74);
+  border-radius: 28px;
+  padding: 2rem 2.25rem 2.25rem;
+  box-shadow:
+    0 8px 32px rgba(109, 90, 200, 0.14),
+    0 2px 8px rgba(109, 90, 200, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+/* ── Scene header (label + progress dots) ─────────────────────────── */
+.scene-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.scene-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(109, 90, 190, 0.62);
+}
+.scene-dots {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  max-width: 160px;
+  justify-content: flex-end;
+}
+.scene-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(109, 90, 190, 0.15);
+  transition: background 0.35s ease;
+  flex-shrink: 0;
+}
+.scene-dot.active {
+  background: rgba(109, 90, 190, 0.72);
+}
+
+/* ── Scene title ──────────────────────────────────────────────────── */
+.scene-title {
+  font-size: 1.22rem !important;
+  font-weight: 700 !important;
+  color: #3d2b6e !important;
+  margin: 0 0 1rem !important;
+  line-height: 1.42 !important;
+  padding: 0 !important;
+}
+
+/* ── Narrative text box ───────────────────────────────────────────── */
+.scene-text-box {
+  background: rgba(255, 255, 255, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 18px;
+  padding: 1.1rem 1.4rem;
+  margin-bottom: 1.75rem;
+  box-shadow: inset 0 2px 8px rgba(109, 90, 190, 0.05);
+}
+.scene-text-box p {
+  font-size: 1.02rem;
+  line-height: 1.78;
+  color: #4a3c70;
+  margin: 0;
+}
+
+/* ── Countdown timer bar ──────────────────────────────────────────── */
+.timer-track {
+  height: 5px;
+  background: rgba(180, 160, 230, 0.25);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+.timer-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.1s linear, background 0.2s ease;
+}
+
+/* ── "How do you respond?" label ──────────────────────────────────── */
+.choices-heading {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  color: rgba(109, 90, 180, 0.52);
+  text-transform: uppercase;
+  margin-bottom: 0.7rem;
+  text-align: center;
+}
+
+/* ── Choices container ────────────────────────────────────────────── */
+.choices-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Speech bubble choice buttons ────────────────────────────────── */
+/*   Odd  (left)  bubbles: tail at bottom-left corner               */
+/*   Even (right) bubbles: tail at bottom-right corner, offset right */
+.choice-bubble {
+  position: relative;
+  width: 82%;
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  border-radius: 20px 20px 20px 5px;
+  padding: 13px 18px;
+  text-align: left;
+  font-size: 0.96rem;
+  font-weight: 500;
+  color: #3d2b6e;
+  cursor: pointer;
+  line-height: 1.52;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  box-shadow:
+    0 3px 14px rgba(109, 90, 200, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  display: block;
+  margin-left: 0;
+  margin-right: auto;
+}
+.choice-bubble.right {
+  border-radius: 20px 20px 5px 20px;
+  margin-left: auto;
+  margin-right: 0;
+  text-align: right;
+}
+.choice-bubble:hover {
+  transform: translateY(-2px) scale(1.012);
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow:
+    0 6px 22px rgba(109, 90, 200, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+.choice-bubble:active {
+  transform: scale(0.97);
+}
+.choice-bubble:focus-visible {
+  outline: 2px solid rgba(109, 90, 200, 0.52);
+  outline-offset: 3px;
+}
+
+/* ── Free-text reflection section ────────────────────────────────── */
+.free-text-section {
+  margin-top: 1.25rem;
+}
+.free-text-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #3d2b6e;
+  margin-bottom: 0.25rem;
+}
+.free-text-optional {
+  font-size: 0.82rem;
+  color: rgba(100, 80, 160, 0.52);
+  margin-bottom: 0.75rem;
+}
+.free-text-area {
+  width: 100%;
+  box-sizing: border-box;
+  height: 100px;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  border: 1.5px solid rgba(180, 160, 240, 0.38);
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  font-size: 0.96rem;
+  color: #3d2b6e;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.6;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+  display: block;
+}
+.free-text-area:focus {
+  border-color: rgba(109, 90, 200, 0.55);
+  box-shadow: 0 0 0 3px rgba(109, 90, 200, 0.1);
+}
+.free-text-area::placeholder {
+  color: rgba(109, 90, 180, 0.38);
+}
+
+/* ── Continue pill button ─────────────────────────────────────────── */
+.continue-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 1rem;
+  padding: 11px 30px;
+  background: linear-gradient(135deg, #7c5cfc, #5b8fff);
+  border: none;
+  border-radius: 50px;
+  color: #fff;
+  font-size: 0.96rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 4px 16px rgba(100, 80, 200, 0.3);
+}
+.continue-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(100, 80, 200, 0.42);
+}
+.continue-btn:active {
+  transform: scale(0.97);
+}
+
+/* ── WordChoice component ─────────────────────────────────────────── */
+.wordchoice-wrapper {
+  padding: 1.5rem 1rem 3rem;
+  max-width: 660px;
+  margin: 0 auto;
+}
+.wordchoice-card {
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1.5px solid rgba(255, 255, 255, 0.74);
+  border-radius: 28px;
+  padding: 2.5rem 2.25rem 2.75rem;
+  box-shadow:
+    0 8px 32px rgba(109, 90, 200, 0.14),
+    0 2px 8px rgba(109, 90, 200, 0.06);
+  text-align: center;
+}
+.wordchoice-eyebrow {
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(109, 90, 190, 0.58);
+  margin-bottom: 1rem;
+}
+.wordchoice-prompt {
+  font-size: 1.08rem;
+  line-height: 1.72;
+  color: #4a3c70;
+  margin-bottom: 2.25rem;
+}
+.wordchoice-words {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.wordchoice-btn {
+  padding: 14px 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 50px;
+  border: 2px solid rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #3d2b6e;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow:
+    0 3px 14px rgba(109, 90, 200, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  letter-spacing: 0.04em;
+  font-family: inherit;
+}
+.wordchoice-btn:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.05);
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow: 0 8px 24px rgba(109, 90, 200, 0.22);
+}
+.wordchoice-btn.selected {
+  background: linear-gradient(135deg, rgba(124, 92, 252, 0.82), rgba(91, 143, 255, 0.82));
+  border-color: rgba(124, 92, 252, 0.48);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(109, 90, 200, 0.35);
+  backdrop-filter: none;
+}
+.wordchoice-btn.dimmed {
+  opacity: 0.38;
+  cursor: default;
+  transform: none !important;
+}
+
+/* ── Home page ───────────────────────────────────────────────────── */
+.home-hero {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+  box-sizing: border-box;
+}
+
+.home-card {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(26px);
+  -webkit-backdrop-filter: blur(26px);
+  border: 1.5px solid rgba(255, 255, 255, 0.78);
+  border-radius: 32px;
+  padding: 0 3rem 3.25rem;
+  max-width: 560px;
+  width: 100%;
+  box-shadow:
+    0 16px 56px rgba(109, 90, 200, 0.16),
+    0 4px 16px rgba(109, 90, 200, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  text-align: center;
+  overflow: hidden;
+  animation: home-fade-up 0.65s ease-out both;
+}
+
+/* Full-width spectrum bar across the card top */
+.home-card::before {
+  content: '';
+  display: block;
+  height: 5px;
+  width: calc(100% + 6rem);
+  margin-left: -3rem;
+  margin-bottom: 2.5rem;
+  background: linear-gradient(90deg, #7c5cfc, #5b8fff 38%, #34d399 68%, #f59e0b);
+}
+
+@keyframes home-fade-up {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Eyebrow badge */
+.home-eyebrow {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(109, 90, 190, 0.75);
+  padding: 5px 16px;
+  background: rgba(109, 90, 200, 0.09);
+  border: 1px solid rgba(109, 90, 200, 0.2);
+  border-radius: 50px;
+  margin-bottom: 1.6rem;
+}
+
+/* Display title */
+.home-title {
+  font-size: clamp(2.1rem, 7vw, 3.1rem);
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  color: #2d1f55;
+  margin: 0 0 1.4rem;
+  word-spacing: normal;
+}
+.home-title-gradient {
+  background: linear-gradient(135deg, #7c5cfc 0%, #5b8fff 55%, #34d399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Decorative rule */
+.home-rule {
+  width: 56px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #7c5cfc, #5b8fff);
+  border: none;
+  margin: 0 auto 1.5rem;
+}
+
+/* Tagline */
+.home-tagline {
+  font-size: 1.04rem;
+  color: #6b5c95;
+  line-height: 1.6;
+  font-style: italic;
+  margin-bottom: 1.4rem;
+}
+
+/* Info chips */
+.home-chips {
+  display: flex;
+  gap: 0.55rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.75rem;
+}
+.home-chip {
+  background: rgba(109, 90, 200, 0.08);
+  border: 1px solid rgba(109, 90, 200, 0.18);
+  border-radius: 50px;
+  padding: 5px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(80, 60, 160, 0.82);
+  letter-spacing: 0.03em;
+}
+
+/* Description */
+.home-description {
+  font-size: 0.96rem;
+  color: #5a4e7a;
+  line-height: 1.75;
+  margin-bottom: 2.25rem;
+}
+
+/* CTA button */
+@keyframes cta-pulse {
+  0%, 100% { box-shadow: 0 6px 24px rgba(100, 80, 200, 0.38); }
+  50%       { box-shadow: 0 10px 34px rgba(100, 80, 200, 0.56); }
+}
+.home-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 44px;
+  background: linear-gradient(135deg, #7c5cfc, #5b8fff);
+  border: none;
+  border-radius: 50px;
+  color: #fff;
+  font-size: 1.08rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  font-family: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: cta-pulse 3s ease-in-out infinite;
+}
+.home-cta:hover {
+  transform: translateY(-3px);
+  animation: none;
+  box-shadow: 0 14px 38px rgba(100, 80, 200, 0.52);
+}
+.home-cta:active {
+  transform: scale(0.97);
+  animation: none;
+}
+.home-cta .cta-arrow {
+  font-size: 1.15rem;
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+.home-cta:hover .cta-arrow {
+  transform: translateX(5px);
+}
+
+/* ── Landscape (mobile rotated, short viewport) ──────────────────── */
+@media (orientation: landscape) and (max-height: 560px) {
+  /* Blobs: shrink so they don't dominate the short screen */
+  .game-blob-1 { width: 300px; height: 300px; top: -100px; left: -100px; }
+  .game-blob-2 { width: 260px; height: 260px; bottom: -80px; right: -80px; }
+  .game-blob-3 { width: 180px; height: 180px; }
+
+  /* Wrapper: minimal vertical padding */
+  .game-wrapper,
+  .wordchoice-wrapper {
+    padding: 0.5rem 1rem 1rem;
+  }
+
+  /* Card: tighter padding, smaller radius */
+  .scene-card,
+  .wordchoice-card {
+    padding: 1rem 1.5rem 1.2rem;
+    border-radius: 20px;
+  }
+
+  .scene-header {
+    margin-bottom: 0.6rem;
+  }
+
+  /* Hide dots in landscape — the label shows scene N of 15 */
+  .scene-dots {
+    display: none;
+  }
+
+  .scene-title {
+    font-size: 0.98rem !important;
+    margin: 0 0 0.5rem !important;
+  }
+
+  .scene-text-box {
+    padding: 0.65rem 1rem;
+    margin-bottom: 0.85rem;
+    border-radius: 12px;
+  }
+  .scene-text-box p {
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  .choices-heading {
+    font-size: 0.7rem;
+    margin-bottom: 0.45rem;
+  }
+  .choices-container {
+    gap: 7px;
+  }
+  .choice-bubble {
+    padding: 8px 13px;
+    font-size: 0.86rem;
+    line-height: 1.4;
+    width: 88%;
+  }
+
+  .timer-track {
+    margin-bottom: 0.85rem;
+  }
+
+  .free-text-section {
+    margin-top: 0.75rem;
+  }
+  .free-text-area {
+    height: 68px;
+    font-size: 0.88rem;
+  }
+  .continue-btn {
+    padding: 9px 24px;
+    font-size: 0.88rem;
+    margin-top: 0.65rem;
+  }
+
+  /* WordChoice */
+  .wordchoice-card {
+    padding: 1.1rem 1.5rem 1.4rem;
+  }
+  .wordchoice-eyebrow {
+    margin-bottom: 0.5rem;
+  }
+  .wordchoice-prompt {
+    font-size: 0.92rem;
+    margin-bottom: 1.1rem;
+    line-height: 1.55;
+  }
+  .wordchoice-btn {
+    padding: 10px 22px;
+    font-size: 0.9rem;
+  }
+
+  /* Home card — compact for landscape */
+  .home-hero {
+    align-items: flex-start;
+    padding: 0.6rem 1rem 1rem;
+  }
+  .home-card {
+    padding: 0 2rem 2rem;
+    border-radius: 22px;
+  }
+  .home-card::before {
+    width: calc(100% + 4rem);
+    margin-left: -2rem;
+    margin-bottom: 1.4rem;
+  }
+  .home-eyebrow {
+    margin-bottom: 0.9rem;
+    font-size: 0.66rem;
+  }
+  .home-title {
+    font-size: 1.65rem;
+    margin-bottom: 0.8rem;
+  }
+  .home-rule {
+    margin-bottom: 0.8rem;
+  }
+  .home-tagline {
+    font-size: 0.88rem;
+    margin-bottom: 0.85rem;
+  }
+  .home-chips {
+    margin-bottom: 0.9rem;
+  }
+  .home-description {
+    font-size: 0.86rem;
+    line-height: 1.6;
+    margin-bottom: 1.2rem;
+  }
+  .home-cta {
+    padding: 11px 32px;
+    font-size: 0.9rem;
+  }
+}
+
+/* ── Very wide screens: cap blob spread ──────────────────────────── */
+@media (min-width: 1400px) {
+  .game-blob-1 { left: calc(50% - 760px); }
+  .game-blob-2 { right: calc(50% - 760px); }
+}
+
+/* ── Dark-mode overrides ──────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: linear-gradient(135deg, #1e1530 0%, #141b2e 40%, #0f1e1a 70%, #1e1b0f 100%);
+    background-attachment: fixed;
+  }
+  .scene-card,
+  .wordchoice-card {
+    background: rgba(30, 22, 55, 0.62);
+    border-color: rgba(120, 100, 200, 0.26);
+  }
+  .scene-text-box {
+    background: rgba(20, 15, 45, 0.42);
+    border-color: rgba(120, 100, 200, 0.2);
+  }
+  .scene-text-box p { color: #c8baff; }
+  .scene-title         { color: #e2d6ff !important; }
+  .scene-label,
+  .choices-heading,
+  .wordchoice-eyebrow  { color: rgba(180, 160, 255, 0.58); }
+  .choice-bubble {
+    background: rgba(40, 28, 80, 0.48);
+    border-color: rgba(120, 100, 200, 0.3);
+    color: #d6caff;
+  }
+  .choice-bubble:hover {
+    background: rgba(60, 44, 120, 0.62);
+  }
+  .free-text-area {
+    background: rgba(30, 22, 60, 0.52);
+    color: #d6caff;
+    border-color: rgba(120, 100, 200, 0.3);
+  }
+  .free-text-area::placeholder { color: rgba(180,160,255,0.32); }
+  .free-text-label   { color: #d6caff; }
+  .free-text-optional { color: rgba(180,160,255,0.45); }
+  .wordchoice-prompt { color: #c8baff; }
+  .wordchoice-btn {
+    background: rgba(40, 28, 80, 0.48);
+    border-color: rgba(120, 100, 200, 0.3);
+    color: #d6caff;
+  }
+  .wordchoice-btn:hover:not(:disabled) {
+    background: rgba(60, 44, 120, 0.62);
+  }
+  /* Home page */
+  .home-card {
+    background: rgba(25, 18, 50, 0.62);
+    border-color: rgba(120, 100, 200, 0.28);
+  }
+  .home-title    { color: #e8e0ff; }
+  .home-tagline  { color: #a898d0; }
+  .home-description { color: #9688c0; }
+  .home-eyebrow,
+  .home-chip {
+    background: rgba(140, 110, 255, 0.14);
+    border-color: rgba(140, 110, 255, 0.26);
+    color: rgba(200, 180, 255, 0.82);
+  }
 }

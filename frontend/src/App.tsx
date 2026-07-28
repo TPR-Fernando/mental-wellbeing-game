@@ -12,6 +12,10 @@ import { Completion } from './components/Completion';
 function App() {
   return (
     <Router>
+      {/* Ambient blobs — persistent across all game pages */}
+      <div className="game-blob game-blob-1" aria-hidden="true" />
+      <div className="game-blob game-blob-2" aria-hidden="true" />
+      <div className="game-blob game-blob-3" aria-hidden="true" />
       <Routes>
         <Route path="/" element={<Consent />} />
         <Route element={<RequireConsent />}>
