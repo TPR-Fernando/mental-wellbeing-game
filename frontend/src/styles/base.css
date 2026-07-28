@@ -1,0 +1,126 @@
+html {
+  overflow-y: hidden;
+  /* Add scrollbar styling that matches the current theme */
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) transparent;
+}
+
+/* For WebKit browsers (Chrome, Safari, Edge) */
+html::-webkit-scrollbar {
+  width: 16px;
+}
+
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb {
+  background-color: var(--accent);
+  border-radius: 8px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+#root {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: left;
+  border-inline: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+h1,
+h2 {
+  font-family: var(--heading);
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+h1 {
+  font-size: 56px;
+  letter-spacing: 0.03em;
+  margin: 32px 0;
+  line-height: 1.5;
+  word-spacing: 0.1em;
+  @media (max-width: 1024px) {
+    font-size: 36px;
+    margin: 20px 0;
+  }
+}
+h2 {
+  font-size: 24px;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  margin: 0 0 8px;
+  padding: 0.5rem 0;
+  @media (max-width: 1024px) {
+    font-size: 20px;
+  }
+}
+p {
+  margin: 0;
+}
+
+code,
+.counter {
+  font-family: var(--mono);
+  display: inline-flex;
+  border-radius: 4px;
+  color: var(--text-h);
+}
+
+code {
+  font-size: 15px;
+  line-height: 135%;
+  padding: 4px 8px;
+  background: var(--code-bg);
+}
+
+/* ===================================================================
+   GAME THEME — Mental Wellbeing Narrative
+   Glassmorphism + speech-bubble choices + ambient gradient backdrop
+   =================================================================== */
+
+body {
+  /* gradient via a fixed pseudo-element — avoids iOS background-attachment:fixed bug */
+  background: linear-gradient(135deg, #f0e8ff 0%, #e0eeff 40%, #e4f7ef 70%, #fff5e8 100%);
+  background-attachment: fixed;
+}
+
+/* Fallback for browsers/devices that ignore background-attachment:fixed (iOS Safari) */
+@supports not (background-attachment: fixed) {
+  body {
+    background-attachment: scroll;
+  }
+}
+
+#root {
+  border-inline: none;
+  background: transparent;
+}
+
+/* ── Global styles ─────────────────────────────────────────────────── */
+
+html, body {
+  overflow-y: hidden;
+  height: 100%;
+}

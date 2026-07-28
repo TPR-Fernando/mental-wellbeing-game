@@ -1,0 +1,85 @@
+/* ── Mini-game container ─────────────────────────────────────────── */
+.minigame-container {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: gs-enter 0.5s ease-out both;
+}
+
+/* ── WordChoice component ─────────────────────────────────────────── */
+.wordchoice-wrapper {
+  padding: 1.5rem 1rem 3rem;
+  max-width: 660px;
+  margin: 0 auto;
+  animation: gs-enter 0.5s ease-out 0.15s both;
+}
+.wordchoice-card {
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1.5px solid rgba(255, 255, 255, 0.74);
+  border-radius: 18px 5px 18px 5px;
+  padding: 2.5rem 2.25rem 2.75rem;
+  box-shadow:
+    0 8px 32px rgba(109, 90, 200, 0.14),
+    0 2px 8px rgba(109, 90, 200, 0.06);
+  text-align: center;
+}
+.wordchoice-eyebrow {
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(109, 90, 190, 0.58);
+  margin-bottom: 1rem;
+}
+.wordchoice-prompt {
+  font-size: 1.08rem;
+  line-height: 1.72;
+  color: #4a3c70;
+  margin-bottom: 2.25rem;
+}
+.wordchoice-words {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.wordchoice-btn {
+  padding: 14px 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 18px 5px 18px 5px;
+  border: 2px solid rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #3d2b6e;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow:
+    0 3px 14px rgba(109, 90, 200, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  letter-spacing: 0.04em;
+  font-family: inherit;
+}
+.wordchoice-btn:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.05);
+  background: rgba(255, 255, 255, 0.66);
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(109, 90, 200, 0.22);
+}
+.wordchoice-btn.selected {
+  background: linear-gradient(135deg, rgba(124, 92, 252, 0.82), rgba(91, 143, 255, 0.82));
+  border-color: rgba(124, 92, 252, 0.48);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(109, 90, 200, 0.35);
+  backdrop-filter: none;
+}
+.wordchoice-btn.dimmed {
+  opacity: 0.38;
+  cursor: default;
+  transform: none !important;
+}

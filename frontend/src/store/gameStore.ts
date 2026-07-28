@@ -2,24 +2,25 @@ import { create } from 'zustand';
 
 const SESSION_STORAGE_KEY = 'mwg_session';
 
-function loadPersistedSession(): { sessionId: string | null; consentGiven: boolean } {
-  if (typeof window === 'undefined') return { sessionId: null, consentGiven: false };
+function loadPersistedSession(): { sessionId: string | null; consentGiven: boolean; userId: string | null } {
+  if (typeof window === 'undefined') return { sessionId: null, consentGiven: false, userId: null };
   try {
     const raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
-    if (!raw) return { sessionId: null, consentGiven: false };
+    if (!raw) return { sessionId: null, consentGiven: false, userId: null };
     const parsed = JSON.parse(raw);
     return {
       sessionId: typeof parsed.sessionId === 'string' ? parsed.sessionId : null,
       consentGiven: parsed.consentGiven === true,
+      userId: typeof parsed.userId === 'string' ? parsed.userId : null,
     };
   } catch {
-    return { sessionId: null, consentGiven: false };
+    return { sessionId: null, consentGiven: false, userId: null };
   }
 }
 
-function persistSession(sessionId: string, consentGiven: boolean) {
+function persistSession(sessionId: string, consentGiven: boolean, userId?: string | null) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ sessionId, consentGiven }));
+  window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ sessionId, consentGiven, userId: userId ?? null }));
 }
 
 interface GameState {
@@ -30,7 +31,9 @@ interface GameState {
   miniGameWeights: Record<number, -1 | 0 | 1>; // Maps mini-game index (1-3) to weight; feeds only into AI summary
   sessionId: string | null;
   consentGiven: boolean;
+  userId: string | null;
   wellbeingSummary: string | null;
+  groundTruthScores: { who5Score: number; swemwbsScore: number } | null;
   recordChoice: (sceneIndex: number, weight: number) => void;
   recordReactionTime: (sceneIndex: number, ms: number) => void;
   recordText: (sceneIndex: number, text: string) => void;
@@ -39,6 +42,8 @@ interface GameState {
   resetGame: () => void;
   setSession: (sessionId: string) => void;
   setWellbeingSummary: (summary: string) => void;
+  setUserId: (uid: string) => void;
+  setGroundTruthScores: (scores: { who5Score: number; swemwbsScore: number }) => void;
   medianReactionTime: () => number | null;
 }
 
@@ -53,7 +58,9 @@ export const useGameStore = create<GameState>((set, get) => {
     miniGameWeights: {},
     sessionId: persisted.sessionId,
     consentGiven: persisted.consentGiven,
+    userId: persisted.userId,
     wellbeingSummary: null,
+    groundTruthScores: null,
 
     recordChoice: (sceneIndex, weight) =>
       set((state) => ({
@@ -101,11 +108,19 @@ export const useGameStore = create<GameState>((set, get) => {
       }),
 
     setSession: (sessionId) =>
-      set(() => {
-        persistSession(sessionId, true);
+      set((state) => {
+        persistSession(sessionId, true, state.userId);
         return { sessionId, consentGiven: true };
       }),
 
     setWellbeingSummary: (summary) => set({ wellbeingSummary: summary }),
+
+    setUserId: (uid) =>
+      set((state) => {
+        if (state.sessionId) persistSession(state.sessionId, state.consentGiven, uid);
+        return { userId: uid };
+      }),
+
+    setGroundTruthScores: (scores) => set({ groundTruthScores: scores }),
   };
 });

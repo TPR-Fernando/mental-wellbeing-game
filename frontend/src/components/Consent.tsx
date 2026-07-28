@@ -11,7 +11,6 @@ export const Consent = () => {
   const consentGiven = useGameStore((state) => state.consentGiven);
   const setSession = useGameStore((state) => state.setSession);
 
-  const [checked, setChecked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,69 +39,89 @@ export const Consent = () => {
   };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '650px', margin: '0 auto' }}>
-      <h1>Before You Begin</h1>
+    <div className="game-wrapper consent-wrapper">
+      <div className="scene-card consent-card">
+        <div className="consent-header">
+          <span className="consent-eyebrow">Participant Information & Consent</span>
+          <h1 className="consent-title">Student Wellbeing Study</h1>
+          <p className="consent-subtitle">
+            Please read the following carefully before deciding whether to take part.
+          </p>
+        </div>
 
-      <p style={{ lineHeight: '1.6' }}>
-        You're being invited to take part in a short research study exploring student well-being
-        through an interactive story. Here's what that means in practice:
-      </p>
+        <div className="consent-divider" />
 
-      <ul style={{ lineHeight: '1.8' }}>
-        <li>
-          <strong>What it is:</strong> You'll play through a short narrative about a student's day,
-          make a few choices along the way, and answer some optional reflection questions.
-        </li>
-        <li>
-          <strong>It's anonymous:</strong> We don't collect your name, email, or any other
-          identifying information — only your choices and answers, linked to a random session ID.
-        </li>
-        <li>
-          <strong>It's voluntary:</strong> You can stop at any point, for any reason, with no
-          consequences.
-        </li>
-        <li>
-          <strong>How long it takes:</strong> Roughly 10–15 minutes, start to finish.
-        </li>
-      </ul>
+        <div className="consent-content scrollable-content">
 
-      <p style={{ lineHeight: '1.6' }}>
-        By continuing, you agree to take part on these terms.
-      </p>
+          <div className="consent-info-grid">
+            <div className="consent-info-block">
+              <div>
+                <p className="consent-info-label">What the study involves</p>
+                <p className="consent-info-text">
+                  You'll play through a short interactive narrative about a student's day, make
+                  choices along the way, and answer optional reflection questions.
+                </p>
+              </div>
+            </div>
 
-      <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', margin: '1.5rem 0' }}>
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => setChecked(e.target.checked)}
-          style={{ marginTop: '4px' }}
-        />
-        <span>I have read the above, and I agree and want to continue.</span>
-      </label>
+            <div className="consent-info-block">
+              <div>
+                <p className="consent-info-label">Anonymity & data</p>
+                <p className="consent-info-text">
+                  No name, email, or identifying information is collected. Your responses are
+                  stored only against a randomly generated session ID.
+                </p>
+              </div>
+            </div>
 
-      {error && (
-        <p style={{ color: '#c62828', lineHeight: '1.6' }} role="alert">
-          {error}
-        </p>
-      )}
+            <div className="consent-info-block">
+              <div>
+                <p className="consent-info-label">Voluntary participation</p>
+                <p className="consent-info-text">
+                  Taking part is entirely voluntary. You may stop at any point, for any reason,
+                  with no consequences.
+                </p>
+              </div>
+            </div>
 
-      <button
-        onClick={handleAgree}
-        disabled={!checked || submitting}
-        style={{
-          padding: '12px 30px',
-          fontSize: '1.1rem',
-          cursor: !checked || submitting ? 'not-allowed' : 'pointer',
-          backgroundColor: '#4caf50',
-          color: '#ffffff',
-          border: '2px solid #45a049',
-          borderRadius: '5px',
-          fontWeight: '500',
-          opacity: !checked || submitting ? 0.6 : 1,
-        }}
-      >
-        {submitting ? 'Starting…' : 'I Agree and Want to Continue'}
-      </button>
+            <div className="consent-info-block">
+              <div>
+                <p className="consent-info-label">Time commitment</p>
+                <p className="consent-info-text">
+                  Approximately <strong>10–15 minutes</strong> from start to finish.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="consent-divider" />
+
+          <div className="consent-agreement-section">
+            <p className="consent-declaration-heading">Declaration of consent</p>
+            <p className="consent-paragraph">
+              By clicking <em>I Agree & Continue</em>, you confirm
+              that you have read and understood the information above, and that you voluntarily
+              consent to participate in this study on these terms.
+            </p>
+
+
+            {error && (
+              <p className="consent-error" role="alert">
+                {error}
+              </p>
+            )}
+
+            <button
+              onClick={handleAgree}
+              disabled={submitting}
+              className="consent-button"
+            >
+              {submitting ? 'Starting…' : 'I Agree & Continue'}
+            </button>
+          </div>
+
+        </div>
+      </div>
     </div>
   );
 };

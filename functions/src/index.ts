@@ -88,16 +88,28 @@ async function callGemini(mode: Mode, payload: unknown): Promise<{ question?: st
       `Keep it under 3 sentences. Respond with ONLY the question text, nothing else.`;
     maxWords = "under 3 sentences";
   } else {
-    const { who5Predicted, swemwbsPredicted, interviewAnswers } = payload as {
+    const { who5Predicted, swemwbsPredicted, interviewAnswers, choiceSummary, miniGameSummary, reactionTimeSummary } = payload as {
       who5Predicted: number;
       swemwbsPredicted: number;
       interviewAnswers: string[];
+      choiceSummary?: string;
+      miniGameSummary?: string;
+      reactionTimeSummary?: string;
     };
+
+    const behavioralContext = [
+      choiceSummary ? `Story choices: ${choiceSummary}` : null,
+      miniGameSummary ? `Mini-game responses: ${miniGameSummary}` : null,
+      reactionTimeSummary ? `Response timing: ${reactionTimeSummary}` : null,
+    ].filter(Boolean).join('. ');
+
     userPrompt =
       `Write a short (80-120 word), warm, non-clinical well-being summary for a participant who just ` +
-      `finished an interactive story and a brief interview. Their indicators: WHO-5 predicted score ` +
-      `${who5Predicted}, SWEMWBS predicted score ${swemwbsPredicted}. Their interview answers: ` +
-      `${interviewAnswers.map((a, i) => `(${i + 1}) ${a}`).join(" ")}. ${commonInstruction} ` +
+      `finished an interactive narrative about a student's day and a brief reflective interview. ` +
+      `Behavioural data from their session — ${behavioralContext}. ` +
+      `Predicted well-being indicators: WHO-5 score ${Math.round(who5Predicted)}/100, SWEMWBS score ${Math.round(swemwbsPredicted)}/35. ` +
+      `Their interview reflections: ${interviewAnswers.map((a, i) => `(${i + 1}) ${a}`).join(" ")}. ` +
+      `${commonInstruction} Personalise the summary to their specific patterns above. ` +
       `MUST include a sentence explicitly stating this is not a diagnosis. ` +
       `Respond with ONLY the summary text, nothing else.`;
     maxWords = "80-120 words";

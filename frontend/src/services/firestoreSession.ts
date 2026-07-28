@@ -121,3 +121,9 @@ export async function saveGroundTruth(sessionId: string, data: GroundTruthData):
     { merge: true },
   );
 }
+
+// Links an existing session to an authenticated user after Google sign-in.
+export async function linkSessionToUser(sessionId: string, userId: string): Promise<void> {
+  const ref = doc(db, 'sessions', sessionId);
+  await setDoc(ref, { userId }, { merge: true });
+}

@@ -15,9 +15,20 @@ service cloud.firestore {
       // Incremental writes during play (choices, freeTexts, minigames, currentScene, status,
       // postGameInterview, wellbeingSummary). `groundTruth` may only be written in the same update
       // that marks the session completed, or after it has already been completed — never before.
-      allow update: if !('groundTruth' in request.resource.data)
-                    || request.resource.data.completedAt != null
-                    || resource.data.completedAt != null;
+      // An authenticated user may also write their `userId` to link the session to their account
+      // (Google sign-in gate after the game — see COPILOT_BUILD_GUIDE.md Phase 3).
+      allow update: if (
+                      !('groundTruth' in request.resource.data)
+                      || request.resource.data.completedAt != null
+                      || resource.data.completedAt != null
+                    )
+                    && (
+                      // Allow unauthenticated incremental writes (during gameplay)
+                      !request.auth != null
+                      // OR an authenticated user linking their UID to the session
+                      || (request.auth != null
+                          && request.resource.data.userId == request.auth.uid)
+                    );
 
       // No client reads at all: no listing, no querying, no fetching a session back after writing
       // it (including your own). Only Cloud Functions via the Admin SDK (which bypasses these rules)

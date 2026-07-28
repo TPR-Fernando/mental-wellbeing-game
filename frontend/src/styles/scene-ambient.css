@@ -1,0 +1,294 @@
+/* ===================================================================
+   AMBIENT BACKGROUND — scenes 2–15
+   =================================================================== */
+
+@keyframes amb-blob-float {
+  0%   { transform: translate(0,0)     scale(1);    opacity: 0.12; }
+  33%  { transform: translate(18px,-22px) scale(1.06); opacity: 0.18; }
+  66%  { transform: translate(-12px,14px) scale(0.94); opacity: 0.14; }
+  100% { transform: translate(0,0)     scale(1);    opacity: 0.12; }
+}
+.ambient-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(38px);
+  animation: amb-blob-float ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── Per-scene illustrated icons ─────────────────────────────────── */
+.amb-icon {
+  position: absolute;
+  right: 6%;
+  bottom: 28%;
+  pointer-events: none;
+  opacity: 0.22;
+  z-index: 1;
+  animation: amb-blob-float 8s ease-in-out infinite;
+}
+
+/* Mirror (scene 2) */
+.amb-mirror { width: 80px; height: 110px; }
+.mi-oval {
+  width: 80px; height: 110px;
+  border: 5px solid currentColor;
+  border-radius: 50%;
+  box-shadow: inset 0 0 20px rgba(255,255,255,0.3);
+}
+
+/* Tree (scene 3) */
+.amb-tree { width: 70px; height: 100px; }
+.tree-top {
+  width: 60px; height: 65px;
+  border-radius: 50% 50% 40% 40%;
+  background: currentColor;
+  margin: 0 auto;
+}
+.tree-trunk {
+  width: 14px; height: 35px;
+  background: currentColor;
+  margin: 0 auto;
+  opacity: 0.7;
+}
+
+/* Books (scene 4) */
+.amb-books { width: 90px; height: 80px; display: flex; align-items: flex-end; gap: 4px; }
+.bk {
+  border-radius: 3px 3px 0 0;
+  background: currentColor;
+  flex-shrink: 0;
+}
+.bk1 { width: 20px; height: 75px; opacity: 0.9; }
+.bk2 { width: 22px; height: 60px; opacity: 0.75; }
+.bk3 { width: 18px; height: 70px; opacity: 0.85; }
+
+/* Lightbulb (scene 5) */
+.amb-bulb { width: 60px; height: 80px; position: relative; }
+.bulb-body {
+  width: 44px; height: 50px;
+  border-radius: 50% 50% 30% 30%;
+  background: currentColor;
+  margin: 0 auto;
+  position: relative;
+  top: 8px;
+}
+.bl-ray {
+  position: absolute;
+  width: 2px;
+  height: 18px;
+  background: currentColor;
+  top: 0; left: 50%;
+  transform-origin: bottom center;
+  border-radius: 2px;
+}
+.bl-r1 { transform: translateX(-50%) rotate(-30deg); }
+.bl-r2 { transform: translateX(-50%) rotate(30deg); }
+.bl-r3 { transform: translateX(-50%) rotate(0deg) translateY(-4px); }
+.bl-r4 { transform: translateX(-50%) rotate(-60deg); }
+
+/* Speech bubbles (scene 6) */
+.amb-conflict { width: 110px; height: 90px; position: relative; }
+.c-bubble {
+  position: absolute;
+  border-radius: 18px;
+  background: currentColor;
+}
+.c-b1 { width: 72px; height: 40px; top: 0; left: 0; border-radius: 14px 14px 14px 2px; }
+.c-b2 { width: 60px; height: 36px; bottom: 0; right: 0; border-radius: 14px 14px 2px 14px; opacity: 0.7; }
+
+/* Plate (scene 7) */
+.amb-plate { width: 80px; height: 80px; position: relative; }
+.plate-circle {
+  width: 70px; height: 70px;
+  border: 4px solid currentColor;
+  border-radius: 50%;
+}
+.plate-fork {
+  position: absolute;
+  right: 4px; top: 10px;
+  width: 4px; height: 50px;
+  background: currentColor;
+  border-radius: 2px;
+}
+
+/* Chat bubbles (scene 8) */
+.amb-chat { width: 100px; height: 90px; position: relative; }
+.chat-b {
+  position: absolute;
+  border-radius: 14px;
+  background: currentColor;
+}
+.cb1 { width: 70px; height: 30px; top: 0; left: 0; border-radius: 12px 12px 12px 2px; }
+.cb2 { width: 55px; height: 28px; bottom: 8px; right: 0; border-radius: 12px 12px 2px 12px; opacity: 0.7; }
+
+/* Lamp (scene 9) */
+.amb-lamp { width: 60px; height: 110px; display: flex; flex-direction: column; align-items: center; }
+.lamp-shade {
+  width: 58px; height: 40px;
+  background: currentColor;
+  clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
+}
+.lamp-pole  { width: 6px; height: 50px; background: currentColor; opacity: 0.8; }
+.lamp-base  { width: 40px; height: 10px; background: currentColor; border-radius: 3px; opacity: 0.8; }
+
+/* Laptop (scene 10) */
+.amb-laptop { width: 90px; height: 70px; }
+.lap-screen {
+  width: 90px; height: 55px;
+  background: currentColor;
+  border-radius: 6px 6px 0 0;
+  opacity: 0.9;
+}
+.lap-base {
+  width: 100px; height: 8px;
+  background: currentColor;
+  border-radius: 0 0 4px 4px;
+  margin-left: -5px;
+  opacity: 0.75;
+}
+
+/* Big clock (scene 11) */
+.amb-bigclock { width: 80px; height: 80px; }
+.bc-face {
+  width: 80px; height: 80px;
+  border: 5px solid currentColor;
+  border-radius: 50%;
+  position: relative;
+}
+@keyframes amb-clock-tick { from { transform: translateX(-50%) translateY(-90%) rotate(0deg); } to { transform: translateX(-50%) translateY(-90%) rotate(360deg); } }
+.bc-h {
+  position: absolute;
+  width: 3px; height: 22px;
+  background: currentColor;
+  left: 50%; top: 50%;
+  transform: translateX(-50%) translateY(-90%) rotate(210deg);
+  transform-origin: bottom;
+  border-radius: 2px;
+}
+.bc-m {
+  position: absolute;
+  width: 2px; height: 28px;
+  background: currentColor;
+  left: 50%; top: 50%;
+  transform: translateX(-50%) translateY(-90%) rotate(0deg);
+  transform-origin: bottom;
+  border-radius: 2px;
+  animation: amb-clock-tick 10s linear infinite;
+}
+
+/* Sofa (scene 12) */
+.amb-sofa { width: 110px; height: 60px; position: relative; }
+.sf-body { width: 110px; height: 40px; background: currentColor; border-radius: 10px 10px 0 0; position: absolute; top: 20px; }
+.sf-arm {
+  position: absolute;
+  bottom: 0;
+  width: 20px; height: 55px;
+  background: currentColor;
+  border-radius: 8px;
+  opacity: 0.85;
+}
+.sf-al { left: 0; }
+.sf-ar { right: 0; }
+
+/* Tea cup (scene 13) */
+.amb-tea { width: 70px; height: 80px; }
+.tea-cup {
+  width: 60px; height: 42px;
+  border: 4px solid currentColor;
+  border-radius: 0 0 20px 20px;
+  position: relative;
+  margin: 20px auto 0;
+}
+.tea-cup::after {
+  content: '';
+  position: absolute;
+  right: -14px; top: 5px;
+  width: 10px; height: 16px;
+  border: 3px solid currentColor;
+  border-radius: 0 8px 8px 0;
+  border-left: none;
+}
+@keyframes tea-steam-rise {
+  0%   { transform: translateY(0) scaleX(1);   opacity: 0.7; }
+  100% { transform: translateY(-20px) scaleX(1.3); opacity: 0; }
+}
+.tea-steam {
+  position: absolute;
+  top: 14px;
+  width: 3px;
+  height: 14px;
+  background: currentColor;
+  border-radius: 2px;
+  animation: tea-steam-rise 2s ease-out infinite;
+}
+.ts1 { left: 22px; animation-delay: 0s; }
+.ts2 { left: 35px; animation-delay: 0.7s; }
+
+/* Moon + stars (scene 14) */
+.amb-moon { width: 80px; height: 80px; position: relative; }
+.moon-c {
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: -12px 4px 0 6px transparent;
+  position: absolute;
+  top: 10px; left: 10px;
+  clip-path: circle(50% at 60% 50%);
+}
+.moon-star {
+  position: absolute;
+  width: 6px; height: 6px;
+  background: currentColor;
+  clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+  opacity: 0.7;
+}
+.ms1 { top: 5px; right: 8px; }
+.ms2 { top: 0; left: 12px; width: 4px; height: 4px; }
+
+/* Stars (scene 15) */
+.amb-stars { width: 100px; height: 100px; position: relative; }
+.star-d {
+  position: absolute;
+  background: currentColor;
+  clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+}
+@keyframes star-twinkle { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.7); } }
+.st1 { width: 18px; height: 18px; top: 5%;  left: 10%; animation: star-twinkle 2.5s ease-in-out infinite; }
+.st2 { width: 12px; height: 12px; top: 30%; right: 8%; animation: star-twinkle 3.2s ease-in-out 0.5s infinite; }
+.st3 { width: 22px; height: 22px; top: 60%; left: 5%; animation: star-twinkle 2s ease-in-out 1s infinite; }
+.st4 { width: 10px; height: 10px; top: 15%; left: 55%; animation: star-twinkle 4s ease-in-out 0.3s infinite; }
+.st5 { width: 14px; height: 14px; top: 75%; left: 40%; animation: star-twinkle 3s ease-in-out 1.8s infinite; }
+
+/* ── Mobile adjustments ─────────────────────────────────────────────── */
+@media (max-width: 520px) {
+  .scene-ind-panel  { max-width: 130px; }
+  .scene-ind-title  { max-width: 105px; font-size: 0.75rem; }
+  .scene-prog-panel { max-width: 120px; padding: 6px 8px; }
+  .prog-dot         { width: 6px; height: 6px; }
+
+  .question-display {
+    margin-top: 5rem;
+    padding: 1.1rem 1.2rem;
+    border-radius: 18px 5px 18px 5px;
+  }
+  .question-title { font-size: 1rem !important; }
+  .question-text  { font-size: 0.9rem; line-height: 1.65; }
+
+  .answer-cloud { padding: 11px 15px 18px; font-size: 0.88rem; max-width: 96%; }
+  .answers-count-2 .answer-cloud { max-width: 48%; font-size: 0.84rem; }
+
+  .free-text-overlay { margin-top: 4.5rem; padding: 1.2rem 1.25rem; }
+
+  .alarm-clock-wrap { width: min(72px, 18vw); }
+}
+
+/* ── Landscape mobile: collapse spacing ─────────────────────────────── */
+@media (orientation: landscape) and (max-height: 560px) {
+  .question-title   { font-size: 0.9rem !important; }
+  .question-text    { font-size: 0.84rem; line-height: 1.5; }
+  .answer-cloud     { padding: 9px 14px 15px; font-size: 0.84rem; }
+  .answers-heading  { display: none; }
+  .alarm-window     { top: 5%; width: min(200px, 55vw); height: min(150px, 42vw); }
+  .alarm-bedside    { top: calc(5% + min(150px, 42vw) + 8px + 8px); width: min(260px, 72vw); }
+  .alarm-clock-wrap { top: calc(5% + min(150px, 42vw) + 8px - 40px); width: min(62px, 16vw); }
+}

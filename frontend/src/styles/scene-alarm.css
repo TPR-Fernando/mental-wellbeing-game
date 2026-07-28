@@ -1,0 +1,262 @@
+/* ===================================================================
+   SCENE 1 ANIMATED BACKGROUND — The Alarm
+   =================================================================== */
+
+/* ── Light rays from window ─────────────────────────────────────────── */
+@keyframes alarm-ray-drift {
+  0%   { opacity: 0.18; transform: skewX(-12deg) scaleX(1); }
+  50%  { opacity: 0.32; transform: skewX(-12deg) scaleX(1.08); }
+  100% { opacity: 0.18; transform: skewX(-12deg) scaleX(1); }
+}
+.alarm-rays {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-60%);
+  pointer-events: none;
+}
+.alarm-ray {
+  position: absolute;
+  top: 0;
+  width: 80px;
+  height: 100vh;
+  background: linear-gradient(180deg, rgba(255,220,100,0.5) 0%, transparent 70%);
+  transform-origin: top center;
+  animation: alarm-ray-drift 4s ease-in-out infinite;
+}
+.alarm-ray-1 { left: 80px;  animation-delay: 0s;   animation-duration: 4.2s; }
+.alarm-ray-2 { left: 180px; animation-delay: 0.8s; animation-duration: 3.8s; opacity: 0.7; }
+.alarm-ray-3 { left: 50px;  animation-delay: 1.6s; animation-duration: 5s;   opacity: 0.6; }
+
+/* ── Window frame ───────────────────────────────────────────────────── */
+.alarm-window {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(320px, 72vw);
+  height: min(240px, 55vw);
+  border: 8px solid #5a3a1a;
+  border-radius: 8px 8px 2px 2px;
+  background: transparent;
+  box-shadow: 0 0 0 4px #7a5530, inset 0 0 0 2px #4a2a0a, 0 12px 40px rgba(0,0,0,0.35);
+  overflow: hidden;
+  z-index: 1;
+}
+/* Outside sky view */
+.alarm-outside {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #1a0533 0%, #c62a00 25%, #ff7518 55%, #ffb347 80%, #ffd59e 100%);
+  overflow: hidden;
+}
+/* Rising sun */
+@keyframes alarm-sun-rise {
+  0%   { transform: translateX(-50%) translateY(30px); opacity: 0.7; }
+  100% { transform: translateX(-50%) translateY(0px);  opacity: 1; }
+}
+.alarm-sun {
+  position: absolute;
+  bottom: 25%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff7e0 0%, #ffe066 40%, #ff9800 80%, transparent 100%);
+  box-shadow: 0 0 30px 15px rgba(255,200,0,0.45);
+  animation: alarm-sun-rise 3s ease-out both;
+}
+.alarm-sun-glow {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,180,0,0.3) 0%, transparent 70%);
+  animation: alarm-sun-rise 3s ease-out both;
+}
+/* Clouds */
+@keyframes alarm-cloud-drift {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(30px); }
+}
+.alarm-cloud {
+  position: absolute;
+  height: 20px;
+  border-radius: 50px;
+  background: rgba(255,255,255,0.95);
+}
+.alarm-cloud::before,
+.alarm-cloud::after {
+  content: '';
+  position: absolute;
+  background: rgba(255,255,255,0.95);
+  border-radius: 50%;
+}
+.alarm-cloud-1 {
+  width: 70px;
+  top: 18%;
+  left: 10%;
+  animation: alarm-cloud-drift 7s ease-in-out infinite alternate;
+}
+.alarm-cloud-1::before { width: 28px; height: 28px; top: -14px; left: 12px; }
+.alarm-cloud-1::after  { width: 20px; height: 20px; top: -10px; left: 36px; }
+.alarm-cloud-2 {
+  width: 50px;
+  top: 30%;
+  right: 12%;
+  animation: alarm-cloud-drift 9s ease-in-out infinite alternate-reverse;
+  opacity: 0.85;
+}
+.alarm-cloud-2::before { width: 22px; height: 22px; top: -11px; left: 9px; }
+.alarm-cloud-2::after  { width: 16px; height: 16px; top: -8px; left: 28px; }
+/* Birds */
+@keyframes alarm-bird-fly {
+  0%   { transform: translateX(0) translateY(0) scaleX(1); }
+  25%  { transform: translateX(10px) translateY(-8px) scaleX(1.05); }
+  50%  { transform: translateX(22px) translateY(-3px) scaleX(1); }
+  75%  { transform: translateX(34px) translateY(-10px) scaleX(1.05); }
+  100% { transform: translateX(48px) translateY(-5px) scaleX(1); }
+}
+.alarm-bird {
+  position: absolute;
+  width: 18px;
+  height: 6px;
+}
+.alarm-bird::before, .alarm-bird::after {
+  content: '';
+  position: absolute;
+  width: 9px;
+  height: 3px;
+  border-top: 2px solid rgba(255,255,255,0.8);
+  border-radius: 3px 3px 0 0;
+}
+.alarm-bird::before { left: 0; transform: rotate(20deg); }
+.alarm-bird::after  { right: 0; transform: rotate(-20deg); }
+.alarm-bird-1 { top: 22%; left: 20%; animation: alarm-bird-fly 6s linear infinite; }
+.alarm-bird-2 { top: 15%; left: 15%; animation: alarm-bird-fly 8s linear 1s infinite; opacity: 0.7; }
+/* Rooftop silhouettes */
+.alarm-rooftop {
+  position: absolute;
+  bottom: 0;
+  background: rgba(20,8,40,0.75);
+}
+.alarm-rooftop-1 {
+  width: 50%;
+  height: 30%;
+  left: 0;
+  clip-path: polygon(0 100%, 0 40%, 30% 20%, 50% 35%, 70% 15%, 100% 40%, 100% 100%);
+}
+.alarm-rooftop-2 {
+  width: 55%;
+  height: 28%;
+  right: 0;
+  clip-path: polygon(0 100%, 0 50%, 20% 30%, 45% 45%, 65% 20%, 100% 35%, 100% 100%);
+}
+/* Window cross bars */
+.alarm-window-bar-h {
+  position: absolute;
+  top: 50%; left: 0; right: 0;
+  height: 6px;
+  background: #5a3a1a;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+.alarm-window-bar-v {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 50%;
+  width: 6px;
+  background: #5a3a1a;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+/* Curtains */
+.alarm-curtain {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 22%;
+  z-index: 3;
+  pointer-events: none;
+}
+.alarm-curtain-l {
+  left: -4px;
+  background: linear-gradient(90deg, #c0392b 0%, rgba(160,30,20,0.92) 100%);
+  clip-path: polygon(0 0, 100% 0, 85% 100%, 0 100%);
+}
+.alarm-curtain-r {
+  right: -4px;
+  background: linear-gradient(-90deg, #c0392b 0%, rgba(160,30,20,0.92) 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 15% 100%);
+}
+/* Bedside surface */
+.alarm-bedside {
+  position: absolute;
+  top: calc(15% + min(240px, 55vw) + 8px + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(380px, 88vw);
+  height: 18px;
+  background: linear-gradient(180deg, #7a5530 0%, #5a3a1a 100%);
+  border-radius: 4px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+  z-index: 1;
+}
+/* Alarm clock positioning */
+.alarm-clock-wrap {
+  position: absolute;
+  top: calc(15% + min(240px, 55vw) + 8px - 55px);
+  right: calc(50% - min(160px, 38vw) - 30px);
+  width: min(90px, 20vw);
+  z-index: 2;
+}
+.alarm-clock-svg {
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.45));
+}
+/* Alarm clock shake animation */
+@keyframes alarm-shake {
+  0%,100% { transform: rotate(0deg) translateY(0); }
+  10%      { transform: rotate(-4deg) translateY(-1px); }
+  20%      { transform: rotate(4deg) translateY(-2px); }
+  30%      { transform: rotate(-3deg) translateY(-1px); }
+  40%      { transform: rotate(3deg) translateY(-2px); }
+  50%      { transform: rotate(-2deg) translateY(0); }
+  60%      { transform: rotate(2deg) translateY(-1px); }
+  70%      { transform: rotate(-1deg) translateY(0); }
+}
+.alarm-clock-wrap {
+  animation: alarm-shake 0.7s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+/* Vibration sparks */
+@keyframes alarm-vibe-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.1; }
+}
+.alarm-vibes {
+  animation: alarm-vibe-blink 0.35s ease-in-out infinite;
+}
+/* Floating dust motes in light ray */
+@keyframes alarm-mote-float {
+  0%   { transform: translate(0, 0) scale(1);    opacity: 0; }
+  10%  { opacity: 0.7; }
+  90%  { opacity: 0.5; }
+  100% { transform: translate(15px, -120px) scale(0.4); opacity: 0; }
+}
+.alarm-mote {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,230,150,0.85);
+  animation: alarm-mote-float linear infinite;
+  pointer-events: none;
+}
+.alarm-mote-1 { width: 5px; height: 5px; left: 55%; top: 55%; animation-duration: 5s; animation-delay: 0s; }
+.alarm-mote-2 { width: 3px; height: 3px; left: 58%; top: 60%; animation-duration: 7s; animation-delay: 1.5s; }
+.alarm-mote-3 { width: 4px; height: 4px; left: 52%; top: 50%; animation-duration: 6s; animation-delay: 3s; }
+.alarm-mote-4 { width: 3px; height: 3px; left: 60%; top: 65%; animation-duration: 8s; animation-delay: 0.8s; }

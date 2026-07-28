@@ -1,0 +1,228 @@
+/* ── Main game wrapper ────────────────────────────────────────────── */
+.game-wrapper {
+  padding: 1.5rem 1rem 3rem;
+  max-width: 660px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* ── Glassmorphism scene card ─────────────────────────────────────── */
+.scene-card {
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1.5px solid rgba(255, 255, 255, 0.74);
+  border-radius: 18px 5px 18px 5px;
+  padding: 2rem 2.25rem 2.25rem;
+  box-shadow:
+    0 8px 32px rgba(109, 90, 200, 0.14),
+    0 2px 8px rgba(109, 90, 200, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+/* ── Scene header (label + progress dots) ─────────────────────────── */
+.scene-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.scene-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(109, 90, 190, 0.62);
+}
+.scene-dots {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  max-width: 160px;
+  justify-content: flex-end;
+}
+.scene-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(109, 90, 190, 0.15);
+  transition: background 0.35s ease;
+  flex-shrink: 0;
+}
+.scene-dot.active {
+  background: rgba(109, 90, 190, 0.72);
+}
+
+/* ── Scene title ──────────────────────────────────────────────────── */
+.scene-title {
+  font-size: 1.22rem !important;
+  font-weight: 700 !important;
+  color: #3d2b6e !important;
+  margin: 0 0 1rem !important;
+  line-height: 1.42 !important;
+  padding: 0 !important;
+}
+
+/* ── Narrative text box ───────────────────────────────────────────── */
+.scene-text-box {
+  background: rgba(255, 255, 255, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 18px;
+  padding: 1.1rem 1.4rem;
+  margin-bottom: 1.75rem;
+  box-shadow: inset 0 2px 8px rgba(109, 90, 190, 0.05);
+}
+.scene-text-box p {
+  font-size: 1.02rem;
+  line-height: 1.78;
+  color: #4a3c70;
+  margin: 0;
+}
+
+/* ── Countdown timer bar ──────────────────────────────────────────── */
+.timer-track {
+  height: 5px;
+  background: rgba(180, 160, 230, 0.25);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+.timer-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.1s linear, background 0.2s ease;
+}
+
+/* ── "How do you respond?" label ──────────────────────────────────── */
+.choices-heading {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  color: rgba(109, 90, 180, 0.52);
+  text-transform: uppercase;
+  margin-bottom: 0.7rem;
+  text-align: center;
+}
+
+/* ── Choices container ────────────────────────────────────────────── */
+.choices-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Speech bubble choice buttons ────────────────────────────────── */
+/*   Odd  (left)  bubbles: tail at bottom-left corner               */
+/*   Even (right) bubbles: tail at bottom-right corner, offset right */
+.choice-bubble {
+  position: relative;
+  width: 82%;
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  border-radius: 18px 5px 18px 5px;
+  padding: 13px 18px;
+  text-align: left;
+  font-size: 0.96rem;
+  font-weight: 500;
+  color: #3d2b6e;
+  cursor: pointer;
+  line-height: 1.52;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-radius 0.18s ease;
+  box-shadow:
+    0 3px 14px rgba(109, 90, 200, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  display: block;
+  margin-left: 0;
+  margin-right: auto;
+}
+.choice-bubble.right {
+  border-radius: 20px 20px 5px 20px;
+  margin-left: auto;
+  margin-right: 0;
+  text-align: right;
+}
+.choice-bubble:hover {
+  transform: translateY(-2px) scale(1.012);
+  background: rgba(255, 255, 255, 0.66);
+  border-radius: 18px;
+  box-shadow:
+    0 6px 22px rgba(109, 90, 200, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+.choice-bubble:active {
+  transform: scale(0.97);
+}
+.choice-bubble:focus-visible {
+  outline: 2px solid rgba(109, 90, 200, 0.52);
+  outline-offset: 3px;
+}
+
+/* ── Free-text reflection section ────────────────────────────────── */
+.free-text-section {
+  margin-top: 1.25rem;
+}
+.free-text-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #3d2b6e;
+  margin-bottom: 0.25rem;
+}
+.free-text-optional {
+  font-size: 0.82rem;
+  color: rgba(100, 80, 160, 0.52);
+  margin-bottom: 0.75rem;
+}
+.free-text-area {
+  width: 100%;
+  box-sizing: border-box;
+  height: 100px;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  border: 1.5px solid rgba(180, 160, 240, 0.38);
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  font-size: 0.96rem;
+  color: #3d2b6e;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.6;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+  display: block;
+}
+.free-text-area:focus {
+  border-color: rgba(109, 90, 200, 0.55);
+  box-shadow: 0 0 0 3px rgba(109, 90, 200, 0.1);
+}
+.free-text-area::placeholder {
+  color: rgba(109, 90, 180, 0.38);
+}
+
+/* ── Continue pill button ─────────────────────────────────────────── */
+.continue-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 1rem;
+  padding: 11px 30px;
+  background: linear-gradient(135deg, #7c5cfc, #5b8fff);
+  border: none;
+  border-radius: 18px 5px 18px 5px;
+  color: #fff;
+  font-size: 0.96rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-radius 0.15s ease;
+  box-shadow: 0 4px 16px rgba(100, 80, 200, 0.3);
+}
+.continue-btn:hover {
+  transform: translateY(-2px);
+  border-radius: 18px;
+  box-shadow: 0 6px 22px rgba(100, 80, 200, 0.42);
+}
+.continue-btn:active {
+  transform: scale(0.97);
+}

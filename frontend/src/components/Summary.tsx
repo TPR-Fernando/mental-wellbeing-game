@@ -29,7 +29,7 @@ type Stage =
 
 export const Summary = () => {
   const navigate = useNavigate();
-  const { choices, miniGameWeights, sessionId, setWellbeingSummary } = useGameStore();
+  const { choices, miniGameWeights, reactionTimes, sessionId, setWellbeingSummary } = useGameStore();
 
   const [stage, setStage] = useState<Stage>('loading_q1');
   const [q1, setQ1] = useState('');
@@ -39,6 +39,9 @@ export const Summary = () => {
   const [summaryText, setSummaryText] = useState('');
   const [who5Predicted, setWho5Predicted] = useState(0);
   const [swemwbsPredicted, setSwemwbsPredicted] = useState(0);
+  const [choiceSummary, setChoiceSummary] = useState('');
+  const [miniGameSummary, setMiniGameSummary] = useState('');
+  const [reactionTimeSummary, setReactionTimeSummary] = useState('');
 
   const startedRef = useRef(false);
 
@@ -69,7 +72,7 @@ export const Summary = () => {
 
     // Fold in mini-game weights (-3..+3 range from 3 games × -1/0/+1) as a small adjustment
     // to the AI summary tone. This does NOT go into the real groundTruth questionnaire.
-    const miniGameTotal = Object.values(miniGameWeights).reduce((sum, w) => sum + w, 0);
+    const miniGameTotal = Object.values(miniGameWeights).reduce((sum: number, w: number) => sum + w, 0);
     who5Raw += miniGameTotal;
     swemwbsRaw += miniGameTotal;
 
@@ -87,6 +90,32 @@ export const Summary = () => {
     setWho5Predicted(who5);
     setSwemwbsPredicted(swemwbs);
 
+    // ── Build behavioral context strings for Gemini ──────────────────
+    const cs = buildChoiceSummary(choices);
+    setChoiceSummary(cs);
+
+    const mgLabels: Record<number, string> = { 1: 'rest vs. push (scene 6)', 2: 'social energy (scene 10)', 3: 'pressure response (scene 13)' };
+    const mgParts = Object.entries(miniGameWeights).map(([idx, w]) => {
+      const label = mgLabels[Number(idx)] ?? `mini-game ${idx}`;
+      const tone = w === 1 ? 'positive' : w === -1 ? 'avoidance' : 'neutral';
+      return `${label}: ${tone}`;
+    });
+    setMiniGameSummary(mgParts.length > 0 ? mgParts.join(', ') : 'no mini-games recorded');
+
+    const rtValues = Object.values(reactionTimes);
+    if (rtValues.length > 0) {
+      const sorted = [...rtValues].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      const median = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+      const fast = rtValues.filter((t) => t < median * 0.6).length;
+      const slow = rtValues.filter((t) => t > median * 1.6).length;
+      setReactionTimeSummary(
+        `median ${(median / 1000).toFixed(1)}s; ${fast} unusually fast response${fast !== 1 ? 's' : ''}, ${slow} unusually slow`,
+      );
+    } else {
+      setReactionTimeSummary('response timing not recorded');
+    }
+
     if (!sessionId) {
       setStage('summary');
       setSummaryText(
@@ -96,8 +125,7 @@ export const Summary = () => {
     }
 
     (async () => {
-      const choiceSummary = buildChoiceSummary(choices);
-      const question1 = await generateInterviewQ1(sessionId, choiceSummary);
+      const question1 = await generateInterviewQ1(sessionId, cs);
       setQ1(question1);
       setStage('q1');
     })();
@@ -114,7 +142,15 @@ export const Summary = () => {
   const handleSubmitA2 = async () => {
     if (!sessionId) return;
     setStage('loading_summary');
-    const summary = await generateSummary(sessionId, who5Predicted, swemwbsPredicted, [a1, a2]);
+    const summary = await generateSummary(
+      sessionId,
+      who5Predicted,
+      swemwbsPredicted,
+      [a1, a2],
+      choiceSummary,
+      miniGameSummary,
+      reactionTimeSummary,
+    );
     setSummaryText(summary);
     setWellbeingSummary(summary);
 

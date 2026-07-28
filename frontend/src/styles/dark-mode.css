@@ -1,0 +1,106 @@
+/* ── Dark-mode overrides ──────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: linear-gradient(135deg, #1e1530 0%, #141b2e 40%, #0f1e1a 70%, #1e1b0f 100%);
+    background-attachment: fixed;
+  }
+  .scene-card,
+  .wordchoice-card,
+  .consent-card {
+    background: rgba(30, 22, 55, 0.62);
+    border-color: rgba(120, 100, 200, 0.26);
+  }
+  .scene-text-box {
+    background: rgba(20, 15, 45, 0.42);
+    border-color: rgba(120, 100, 200, 0.2);
+  }
+  .scene-text-box p { color: #c8baff; }
+  .scene-title         { color: #e2d6ff !important; }
+  .scene-label,
+  .choices-heading,
+  .wordchoice-eyebrow,
+  .consent-title { color: rgba(200, 180, 255, 0.95); }
+  .choice-bubble {
+    background: rgba(40, 28, 80, 0.48);
+    border-color: rgba(120, 100, 200, 0.3);
+    color: #d6caff;
+  }
+  .choice-bubble:hover {
+    background: rgba(60, 44, 120, 0.62);
+  }
+  .free-text-area {
+    background: rgba(30, 22, 60, 0.52);
+    color: #d6caff;
+    border-color: rgba(120, 100, 200, 0.3);
+  }
+  .free-text-area::placeholder { color: rgba(180,160,255,0.32); }
+  .free-text-label   { color: #d6caff; }
+  .free-text-optional { color: rgba(180,160,255,0.45); }
+  .wordchoice-prompt { color: #c8baff; }
+  .wordchoice-btn {
+    background: rgba(40, 28, 80, 0.48);
+    border-color: rgba(120, 100, 200, 0.3);
+    color: #d6caff;
+  }
+  .wordchoice-btn:hover:not(:disabled) {
+    background: rgba(60, 44, 120, 0.62);
+  }
+  /* Home page */
+  .home-card {
+    background: rgba(25, 18, 50, 0.62);
+    border-color: rgba(120, 100, 200, 0.28);
+  }
+  .home-title    { color: #e8e0ff; }
+  .home-tagline  { color: #a898d0; }
+  .home-description { color: #9688c0; }
+  .home-eyebrow,
+  .home-chip {
+    background: rgba(140, 110, 255, 0.14);
+    border-color: rgba(140, 110, 255, 0.26);
+    color: rgba(200, 180, 255, 0.82);
+  }
+  /* Consent page – dark mode */
+  .consent-liquid-1 {
+    background: radial-gradient(ellipse at 40% 50%, #6d28d9, #4c1d95);
+    opacity: 0.35;
+  }
+  .consent-liquid-2 {
+    background: radial-gradient(ellipse at 60% 45%, #1e3a5f, #312e81);
+    opacity: 0.35;
+  }
+  .consent-liquid-3 {
+    background: radial-gradient(ellipse at 50% 50%, #5b21b6, #4338ca);
+    opacity: 0.22;
+  }
+  .consent-eyebrow {
+    color: rgba(180, 155, 255, 0.9);
+    background: rgba(124, 92, 252, 0.18);
+    border-color: rgba(124, 92, 252, 0.35);
+  }
+  .consent-subtitle { color: rgba(190, 175, 230, 0.75); }
+  .consent-divider {
+    background: linear-gradient(90deg, rgba(124, 92, 252, 0.4), rgba(91, 143, 255, 0.18), transparent);
+  }
+  .consent-info-block {
+    background: rgba(40, 28, 80, 0.45);
+    border-color: rgba(120, 100, 200, 0.28);
+  }
+  .consent-info-label { color: rgba(180, 155, 255, 0.9); }
+  .consent-info-text  { color: #c8baff; }
+  .consent-agreement-section {
+    background: rgba(40, 28, 80, 0.3);
+    border-color: rgba(120, 100, 200, 0.28);
+  }
+  .consent-declaration-heading { color: rgba(180, 155, 255, 0.9); }
+  .consent-paragraph  { color: #c8baff; }
+  .consent-checkbox-container {
+    background: rgba(30, 22, 60, 0.4);
+    border-color: rgba(120, 100, 200, 0.3);
+  }
+  .consent-checkbox-text { color: #d6caff; }
+  .consent-error {
+    background: rgba(255, 235, 235, 0.1);
+    border-left-color: #ff6b6b;
+    color: #ff8a8a;
+  }
+}

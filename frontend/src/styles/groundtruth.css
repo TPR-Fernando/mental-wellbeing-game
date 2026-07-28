@@ -1,0 +1,526 @@
+/* ══════════════════════════════════════════════════════════════════
+   Ground Truth / Questionnaire — light-mode styles (always active)
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Page wrapper ─────────────────────────────────────────────────── */
+.groundTruthWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 1rem 3rem;
+  position: relative;
+}
+
+/* ── Glassmorphism card (mirrors .scene-card / .warning-card) ─────── */
+.qre-card {
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1.5px solid rgba(255, 255, 255, 0.74);
+  border-radius: 18px 5px 18px 5px;
+  padding: 0 2.25rem 2.25rem;
+  max-width: 660px;
+  width: 100%;
+  box-shadow:
+    0 8px 32px rgba(109, 90, 200, 0.14),
+    0 2px 8px rgba(109, 90, 200, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  position: relative;
+  overflow: hidden;
+  height: 85vh;
+}
+
+/* Spectrum gradient bar across the top (mirrors .home-card::before) */
+.qre-card::before {
+  content: '';
+  display: block;
+  height: 5px;
+  width: calc(100% + 4.5rem);
+  margin-left: -2.25rem;
+  margin-bottom: 2rem;
+  background: linear-gradient(90deg, #7c5cfc, #5b8fff 38%, #34d399 68%, #f59e0b);
+}
+
+/* ── Eyebrow badge (mirrors .home-eyebrow / .warning-eyebrow) ──────── */
+.qre-eyebrow {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(109, 90, 190, 0.75);
+  padding: 5px 16px;
+  background: rgba(109, 90, 200, 0.09);
+  border: 1px solid rgba(109, 90, 200, 0.2);
+  border-radius: 50px;
+  margin-bottom: 1.6rem;
+}
+
+/* ── Title ────────────────────────────────────────────────────────── */
+.qre-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #3d2b6e;
+  margin: 0 0 0.2rem;
+  line-height: 1.3;
+}
+
+/* ── Decorative rule (mirrors .home-rule / .warning-rule) ─────────── */
+.qre-rule {
+  width: 56px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #7c5cfc, #5b8fff);
+  border: none;
+  margin: 0 0 0.5rem;
+}
+
+/* ── Scrollable content area ──────────────────────────────────────── */
+.qre-content {
+  width: 100%;
+}
+
+.scrollable-content {
+  max-height: 62vh;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 92, 252, 0.3) transparent;
+}
+
+.scrollable-content::-webkit-scrollbar { width: 6px; }
+.scrollable-content::-webkit-scrollbar-track { background: transparent; }
+.scrollable-content::-webkit-scrollbar-thumb {
+  background: rgba(124, 92, 252, 0.25);
+  border-radius: 3px;
+}
+.scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 92, 252, 0.4);
+}
+
+/* ── Section spacing ─────────────────────────────────────────────── */
+.qre-section {
+  margin-bottom: 1rem;
+}
+
+.qre-section-text {
+  font-size: 0.88rem;
+  color: #6b5f8a;
+  margin-bottom: 0.5rem;
+  line-height: 1.55;
+}
+
+.qre-section-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #3d2b6e;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Individual question fieldset ────────────────────────────────── */
+.qre-question-display {
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 0.75rem;
+  box-shadow:
+    0 2px 12px rgba(109, 90, 200, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border: 1.5px solid rgba(109, 90, 200, 0.12);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.qre-question-display:has(.selected) {
+  border-color: rgba(124, 92, 252, 0.22);
+  box-shadow:
+    0 4px 16px rgba(109, 90, 200, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.qre-question-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #3d2b6e;
+  margin-bottom: 0.85rem;
+  padding-left: 0.25rem;
+  line-height: 1.45;
+  -webkit-text-stroke: 10px #1a1832;
+  paint-order: stroke fill;
+}
+
+/* ── Answer options ──────────────────────────────────────────────── */
+.qre-answers-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.qre-answer-option {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: rgba(124, 92, 252, 0.04);
+  border-radius: 10px;
+  border: 1.5px solid transparent;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.qre-answer-option:hover {
+  background: rgba(124, 92, 252, 0.08);
+  border-color: rgba(124, 92, 252, 0.22);
+  transform: translateX(2px);
+}
+
+/* Selected state — highlight the chosen option */
+.qre-answer-option.selected {
+  background: rgba(124, 92, 252, 0.11);
+  border-color: rgba(124, 92, 252, 0.4);
+  transform: translateX(3px);
+}
+
+/* ── Hide native radio input (still accessible to keyboard/screen readers) */
+.qre-answer-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* ── Custom radio indicator ──────────────────────────────────────── */
+.qre-radio-custom {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(124, 92, 252, 0.3);
+  background: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.qre-answer-option:hover .qre-radio-custom {
+  border-color: rgba(124, 92, 252, 0.55);
+  background: rgba(124, 92, 252, 0.07);
+}
+
+.qre-answer-option.selected .qre-radio-custom {
+  border-color: #7c5cfc;
+  background: linear-gradient(135deg, #7c5cfc, #5b8fff);
+  box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.18), 0 2px 6px rgba(124, 92, 252, 0.3);
+}
+
+/* ── Radio dot (visible when selected) ──────────────────────────── */
+.qre-radio-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity 0.15s ease, transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.qre-answer-option.selected .qre-radio-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.qre-answer-option span:last-child {
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.qre-answer-option.selected span:last-child {
+  color: #3d2b6e;
+  font-weight: 500;
+}
+
+/* Focus ring for keyboard navigation */
+.qre-answer-option:focus-within {
+  outline: 2px solid rgba(124, 92, 252, 0.5);
+  outline-offset: 1px;
+}
+
+/* ── Submit / Finish button ──────────────────────────────────────── */
+.qre-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 30px;
+  background: linear-gradient(135deg, #7c5cfc, #5b8fff);
+  border: none;
+  border-radius: 18px 5px 18px 5px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  font-family: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-radius 0.15s ease, opacity 0.15s ease;
+  box-shadow: 0 4px 16px rgba(100, 80, 200, 0.3);
+  width: 100%;
+  max-width: 280px;
+  margin-top: 0.5rem;
+}
+
+.qre-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-radius: 18px;
+  box-shadow: 0 6px 22px rgba(100, 80, 200, 0.42);
+}
+
+.qre-button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.qre-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Mobile — portrait phones ≤ 600 px
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .groundTruthWrapper {
+    padding: 0.75rem 0.75rem 2.5rem;
+  }
+
+  .qre-card {
+    padding: 0 1rem 1.5rem;
+    border-radius: 14px 4px 14px 4px;
+  }
+
+  .qre-card::before {
+    width: calc(100% + 2rem);
+    margin-left: -1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .qre-title {
+    font-size: 1.35rem;
+  }
+
+  .qre-question-display {
+    padding: 0.85rem 0.9rem;
+  }
+
+  /* Answer options: full-width, radio left-aligned, text wraps naturally */
+  .qre-answers-area {
+    gap: 0.4rem;
+  }
+
+  .qre-answer-option {
+    padding: 0.55rem 0.85rem;
+    gap: 0.6rem;
+    justify-content: flex-start;
+  }
+
+  .qre-answer-option span {
+    font-size: 0.85rem;
+  }
+
+  .qre-button {
+    max-width: 100%;
+    padding: 12px 20px;
+  }
+
+  .scrollable-content {
+    max-height: none; /* Let it scroll the full page on mobile */
+    overflow-y: visible;
+    padding-right: 0;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Completion page — score cards & result layout
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Personalised Gemini summary text box */
+.completion-summary-box {
+  background: rgba(124, 92, 252, 0.06);
+  border: 1.5px solid rgba(124, 92, 252, 0.18);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.completion-summary-text {
+  font-size: 1rem;
+  color: #3d2b6e;
+  line-height: 1.75;
+  margin: 0;
+}
+
+.completion-scores-section {
+  margin-bottom: 2rem;
+}
+
+/* Two score cards side by side, stacking on mobile */
+.completion-score-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.completion-score-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1.25rem 1rem;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1.5px solid rgba(124, 92, 252, 0.15);
+  border-radius: 14px;
+  box-shadow: 0 3px 12px rgba(109, 90, 200, 0.1);
+  text-align: center;
+}
+
+.completion-score-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(109, 90, 190, 0.65);
+}
+
+.completion-score-value {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #3d2b6e;
+  line-height: 1;
+  background: linear-gradient(135deg, #7c5cfc, #5b8fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.completion-score-max {
+  font-size: 1rem;
+  font-weight: 600;
+  opacity: 0.6;
+}
+
+.completion-score-descriptor {
+  font-size: 0.82rem;
+  color: #6b5f8a;
+  font-weight: 500;
+}
+
+.completion-thankyou {
+  font-size: 0.96rem;
+  color: #5a4e7a;
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+}
+
+.completion-disclaimer {
+  background: rgba(109, 90, 200, 0.05);
+  border-left: 3px solid rgba(109, 90, 200, 0.3);
+  border-radius: 0 10px 10px 0;
+  padding: 1rem 1.25rem;
+  font-size: 0.82rem;
+  color: #6b5f8a;
+  line-height: 1.6;
+  margin-top: 0.5rem;
+}
+
+/* Mobile: stack score cards vertically */
+@media (max-width: 480px) {
+  .completion-score-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .completion-score-value {
+    font-size: 2rem;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Dark mode overrides
+   ══════════════════════════════════════════════════════════════════ */
+@media (prefers-color-scheme: dark) {
+
+  .qre-card {
+    background: rgba(30, 22, 55, 0.62);
+    border-color: rgba(120, 100, 200, 0.26);
+  }
+
+  .qre-eyebrow {
+    background: rgba(140, 110, 255, 0.14);
+    border-color: rgba(140, 110, 255, 0.26);
+    color: rgba(200, 180, 255, 0.82);
+  }
+
+  .qre-title {
+    color: #e8e0ff;
+  }
+
+  .qre-section-title {
+    color: #d6caff;
+  }
+
+  .qre-section-text {
+    color: #a090c8;
+  }
+
+  .qre-question-display {
+    background: rgba(30, 22, 55, 0.6);
+    border-color: rgba(120, 100, 200, 0.2);
+  }
+
+  .qre-question-title {
+    color: #d6caff;
+  }
+
+  .qre-answer-option {
+    background: rgba(40, 28, 80, 0.4);
+  }
+
+  .qre-answer-option:hover {
+    background: rgba(124, 92, 252, 0.15);
+  }
+
+  .qre-answer-option.selected {
+    background: rgba(124, 92, 252, 0.22);
+    border-color: rgba(124, 92, 252, 0.45);
+  }
+
+  .qre-answer-option span {
+    color: #c8baff;
+  }
+
+  /* Completion page dark overrides */
+  .completion-summary-box {
+    background: rgba(124, 92, 252, 0.1);
+    border-color: rgba(124, 92, 252, 0.25);
+  }
+
+  .completion-summary-text {
+    color: #d6caff;
+  }
+
+  .completion-score-card {
+    background: rgba(30, 22, 55, 0.6);
+    border-color: rgba(120, 100, 200, 0.2);
+  }
+
+  .completion-thankyou {
+    color: #a090c8;
+  }
+
+  .completion-disclaimer {
+    color: #9080b8;
+    border-left-color: rgba(124, 92, 252, 0.4);
+    background: rgba(124, 92, 252, 0.06);
+  }
+}

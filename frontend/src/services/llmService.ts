@@ -55,12 +55,15 @@ export async function generateSummary(
   who5Predicted: number,
   swemwbsPredicted: number,
   interviewAnswers: string[],
+  choiceSummary: string,
+  miniGameSummary: string,
+  reactionTimeSummary: string,
 ): Promise<string> {
   try {
     const result = await callNlpService({
       mode: 'generate_summary',
       sessionId,
-      payload: { who5Predicted, swemwbsPredicted, interviewAnswers },
+      payload: { who5Predicted, swemwbsPredicted, interviewAnswers, choiceSummary, miniGameSummary, reactionTimeSummary },
     });
     return (result.data as { summary?: string }).summary ?? LOCAL_SUMMARY_FALLBACK;
   } catch (err) {
