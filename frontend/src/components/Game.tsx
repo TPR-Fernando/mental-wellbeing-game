@@ -284,171 +284,38 @@ export const Game = () => {
 
   if (miniGameIndex !== null && miniGameChoiceSet) {
     return (
-      <div className="game-wrapper" style={{ position: 'fixed', inset: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {/* Floating background particles (from Home.module.css) */}
-        <div className="home-particles">
-          {Array.from({ length: 25 }).map((_, i) => (
-            <div
-              key={i}
-              className="game-blob"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                width: `${8 + Math.random() * 24}px`,
-                height: `${8 + Math.random() * 24}px`,
-                background: `radial-gradient(circle, ${theme.accent}35, transparent)`,
-                animation: 'home-particle-float 10s ease-in-out infinite',
-                animationDelay: `${Math.random() * 6}s`,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Scenario image background with overlay (matches regular scene) */}
+      <div
+        className={`game-scene minigame-scene${entering ? ' game-scene-entering' : ''}`}
+        style={{ '--gs-accent': theme.accent, '--gs-accent-dark': theme.accentDark } as React.CSSProperties}
+      >
+        {/* Scenario image background with overlay — identical treatment to a regular scene */}
         {theme.bgImage && (
           <div className="scenario-wrapper">
-            <img
-              src={theme.bgImage}
-              alt=""
-              className="scenario-bg"
-              style={{ opacity: 0.25 }}
-            />
+            <img src={theme.bgImage} alt="" className="scenario-bg" />
             <div className="scenario-overlay" />
           </div>
         )}
 
-        {/* Glassmorphic card (from Home.module.css) */}
-        <div
-          className="minigame-card glass-effect"
-          style={{
-            background: 'rgba(25, 18, 50, 0.62)',
-            backdropFilter: 'blur(26px)',
-            WebkitBackdropFilter: 'blur(26px)',
-            border: '1.5px solid rgba(255, 255, 255, 0.78)',
-            borderRadius: '18px 5px 18px 5px',
-            padding: '3rem 4rem 3.25rem',
-            maxWidth: '620px',
-            width: '90%',
-            boxShadow: `
-              0 16px 56px ${theme.accent}26,
-              0 4px 16px ${theme.accent}18,
-              inset 0 1px 0 rgba(255, 255, 255, 0.9)
-            `,
-            textAlign: 'center',
-            overflow: 'hidden',
-            animation: 'home-fade-up 0.65s ease-out both',
-          }}
-        >
-          {/* Full-width spectrum bar across the card top (from Home.module.css ::before) */}
-          <div
-            className="minigame-spectrum-bar"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: '-4rem',
-              right: '-4rem',
-              height: '5px',
-              background: `linear-gradient(90deg, ${theme.accent}, #5b8fff 38%, #34d399 68%, #f59e0b)`,
-              borderRadius: '18px 18px 0 0',
-            }}
-          />
+        {/* Reflection indicator — top left, mirrors the scene-number panel */}
+        <div className="scene-ind-panel" style={{ background: theme.panelBg, borderColor: theme.accent } as React.CSSProperties}>
+          <span className="scene-ind-num" style={{ color: theme.accent }}>Reflect</span>
+        </div>
 
-          {/* Eyebrow badge (from Home.module.css) */}
-          <div
-            className="minigame-eyebrow"
-            style={{
-              display: 'inline-block',
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              color: `${theme.accent}bf`,
-              padding: '5px 16px',
-              background: `${theme.accent}17`,
-              border: `1px solid ${theme.accent}33`,
-              borderRadius: '50px',
-              marginBottom: '1.6rem',
-            }}
-          >
-            Mini-Game
-          </div>
+        {/* Prompt — same smoke-blur question bubble used by every scene */}
+        <div className="question-display smoke-bg minigame-question" style={{ '--smoke-color': theme.bubbleBg } as React.CSSProperties & { '--smoke-color': string }}>
+          <p className="minigame-eyebrow" style={{ color: theme.accent }}>A quiet moment</p>
+          <h2 className="question-title" style={{ color: theme.accent, fontSize: '1.5rem' }}>{miniGameChoiceSet.sceneContext}</h2>
+          <p className="question-text" style={{ color: theme.textColor, fontWeight: 'bold' }}>{miniGameChoiceSet.prompt}</p>
+        </div>
 
-          {/* Title with gradient text (from Home.module.css) */}
-          <h2
-            className="minigame-title"
-            style={{
-              fontSize: 'clamp(1.8rem, 6vw, 2.4rem)',
-              fontWeight: 800,
-              lineHeight: 1.18,
-              letterSpacing: '-0.025em',
-              margin: '0 0 1.4rem',
-              wordSpacing: 'normal',
-            }}
-          >
-            <span style={{
-              background: `linear-gradient(135deg, ${theme.accent}, #5b8fff 55%, #34d399)`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}>
-              {miniGameChoiceSet.sceneContext}
-            </span>
-          </h2>
-
-          {/* Decorative rule (from Home.module.css) */}
-          <hr
-            className="minigame-rule"
-            style={{
-              width: '56px',
-              height: '3px',
-              border: 'none',
-              borderRadius: '2px',
-              background: `linear-gradient(90deg, ${theme.accent}, #5b8fff)`,
-              margin: '0 auto 1.5rem',
-            }}
-          />
-
-          {/* WordChoice prompt (from Home.module.css tagline style) */}
-          <p
-            className="minigame-prompt"
-            style={{
-              fontSize: '1.04rem',
-              color: '#6b5c95',
-              lineHeight: 1.6,
-              fontStyle: 'italic',
-              marginBottom: '1.4rem',
-            }}
-          >
-            {miniGameChoiceSet.prompt}
-          </p>
-
-          {/* Word choice buttons (from Home.module.css chips style) */}
-          <div
-            className="minigame-choices"
-            style={{
-              display: 'flex',
-              gap: '0.55rem',
-              justifyContent: 'center',
-              flexWrap: 'wrap',
-              marginBottom: '1.75rem',
-            }}
-          >
+        {/* Word choices — themed like the answer clouds of a regular scene */}
+        <div className="answers-area minigame-answers-area">
+          <div className="minigame-word-row">
             {miniGameChoiceSet.words.map((word, idx) => (
               <button
                 key={idx}
-                className="minigame-word-chip"
-                style={{
-                  background: `${theme.panelBg}14`,
-                  border: `1px solid ${theme.accentDark}30`,
-                  borderRadius: '20px 5px 20px 5px',
-                  padding: '8px 20px',
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                  color: 'white',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  transition: 'transform 0.15s ease, box-shadow 0.2s ease',
-                }}
+                className="minigame-word-btn"
+                style={{ borderColor: theme.accent, '--acbg': theme.bubbleBg } as React.CSSProperties & { '--acbg': string }}
                 onClick={() => {
                   // Determine weight from word selection
                   let weight: -1 | 0 | 1 = 0; // Default to neutral weight
@@ -475,41 +342,11 @@ export const Game = () => {
                   nextScene();
                 }}
               >
-                {word.text}
+                <span style={{ color: theme.textColor }}>{word.text}</span>
               </button>
             ))}
           </div>
         </div>
-
-        {/* Blobs (from Home.module.css) */}
-        <div
-          className="game-blob game-blob-1"
-          style={{
-            position: 'fixed',
-            width: '420px',
-            height: '420px',
-            borderRadius: '50%',
-            background: `radial-gradient(circle, ${theme.accent}38, transparent)`,
-            filter: 'blur(76px)',
-            top: '-140px',
-            left: '-140px',
-            zIndex: 0,
-          }}
-        />
-        <div
-          className="game-blob game-blob-2"
-          style={{
-            position: 'fixed',
-            width: '380px',
-            height: '380px',
-            borderRadius: '50%',
-            background: `radial-gradient(circle, ${theme.accent}30, transparent)`,
-            filter: 'blur(66px)',
-            bottom: '-120px',
-            right: '-120px',
-            zIndex: 0,
-          }}
-        />
       </div>
     );
   }
@@ -568,7 +405,6 @@ export const Game = () => {
 {/* Scene indicator — top left */}
 <div className="scene-ind-panel" style={{ background: theme.panelBg, borderColor: theme.accent } as React.CSSProperties}>
   <span className="scene-ind-num" style={{ color: theme.accent }}>Scene {scene.id}</span>
-  <span className="scene-ind-title">{scene.title}</span>
 </div>
 
       {/* Progress dots — top right */}
@@ -633,7 +469,7 @@ export const Game = () => {
                 width: `${dynamicWidthPct}%`,
                 minHeight: `${dynamicHeight}px`,
                 left: `calc(${baseX}% - 12px)`,
-                top: `calc(${baseY}vh - 24px)`,
+                top: `calc(${baseY}vh - 32px)`,
               } as React.CSSProperties & { '--ac': string; '--acbg': string };
               (style as Record<string, string>)['--ac'] = theme.accent;
               (style as Record<string, string>)['--acbg'] = theme.bubbleBg;
@@ -654,8 +490,10 @@ export const Game = () => {
         </div>
       ) : (
         <div className="free-text-overlay" style={{ background: theme.questionBg, borderColor: theme.accent } as React.CSSProperties}>
+          <div className="free-text-meta">
+            <p className="free-text-optional" style={{ color: theme.textColor }}>Optional</p>
+          </div>
           <p className="free-text-label" style={{ color: theme.accentDark }}>{scene.freeTextPrompt}</p>
-          <p className="free-text-optional" style={{ color: theme.textColor }}>Optional — share your thoughts</p>
           <textarea
             className="free-text-area"
             value={freeText}
@@ -663,13 +501,15 @@ export const Game = () => {
             placeholder="Type your thoughts here…"
             style={{ borderColor: theme.accent, color: theme.textColor } as React.CSSProperties}
           />
-          <button
-            className="ft-continue-btn"
-            style={{ background: `linear-gradient(135deg,${theme.accent},${theme.accentDark})` } as React.CSSProperties}
-            onClick={handleNextScene}
-          >
-            Continue →
-          </button>
+          <div className="ft-actions-row">
+            <button
+              className="ft-continue-btn"
+              style={{ background: `linear-gradient(135deg,${theme.accent},${theme.accentDark})` } as React.CSSProperties}
+              onClick={handleNextScene}
+            >
+              Continue →
+            </button>
+          </div>
         </div>
       )}
     </div>

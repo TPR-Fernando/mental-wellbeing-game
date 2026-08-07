@@ -1,8 +1,10 @@
 html {
-  overflow-y: hidden;
+  min-height: 100%;
+  overflow-y: auto;
   /* Add scrollbar styling that matches the current theme */
   scrollbar-width: thin;
   scrollbar-color: var(--accent) transparent;
+  scrollbar-gutter: stable;
 }
 
 /* For WebKit browsers (Chrome, Safari, Edge) */
@@ -35,11 +37,13 @@ body {
 body {
   min-height: 100dvh;
   overflow-x: hidden;
-  overflow-y: hidden;
+  overflow-y: auto;
 }
 
 #root {
   max-width: 1200px;
+  width: 100%;
+  min-height: 100dvh;
   margin: 0 auto;
   text-align: left;
   border-inline: 1px solid var(--border);
@@ -120,7 +124,3 @@ body {
 
 /* ── Global styles ─────────────────────────────────────────────────── */
 
-html, body {
-  overflow-y: hidden;
-  height: 100%;
-}

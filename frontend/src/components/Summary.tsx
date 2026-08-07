@@ -29,7 +29,7 @@ type Stage =
 
 export const Summary = () => {
   const navigate = useNavigate();
-  const { choices, miniGameWeights, reactionTimes, sessionId, setWellbeingSummary } = useGameStore();
+  const { choices, miniGameWeights, reactionTimes, sessionId, setWellbeingSummary, setPredictedScores } = useGameStore();
 
   const [stage, setStage] = useState<Stage>('loading_q1');
   const [q1, setQ1] = useState('');
@@ -89,6 +89,7 @@ export const Summary = () => {
     
     setWho5Predicted(who5);
     setSwemwbsPredicted(swemwbs);
+    setPredictedScores({ who5Predicted: who5, swemwbsPredicted: swemwbs });
 
     // ── Build behavioral context strings for Gemini ──────────────────
     const cs = buildChoiceSummary(choices);
@@ -220,6 +221,30 @@ export const Summary = () => {
       >
         <p style={{ color: '#000000', fontSize: '1.1rem', lineHeight: '1.6', margin: '0' }}>
           {summaryText}
+        </p>
+      </div>
+
+      <div
+        style={{
+          backgroundColor: '#f5f5f5',
+          padding: '20px',
+          borderRadius: '8px',
+          marginBottom: '30px',
+          border: '2px solid #999',
+        }}
+      >
+        <h3 style={{ margin: '0 0 10px 0', color: '#000' }}>Game-Predicted Well-being Scores</h3>
+        <div style={{ display: 'flex', gap: '2rem' }}>
+          <p style={{ color: '#000', margin: 0 }}>
+            <strong>WHO-5:</strong> {Math.round(who5Predicted)}/100
+          </p>
+          <p style={{ color: '#000', margin: 0 }}>
+            <strong>SWEMWBS:</strong> {Math.round(swemwbsPredicted)}/35
+          </p>
+        </div>
+        <p style={{ color: '#555', fontSize: '0.85rem', marginTop: '10px', marginBottom: 0 }}>
+          Estimated from your in-game choices and mini-game responses — you'll also answer a direct
+          questionnaire next, and both will be shown together at the end.
         </p>
       </div>
 

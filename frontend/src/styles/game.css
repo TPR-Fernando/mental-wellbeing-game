@@ -1,9 +1,15 @@
 /* ── Main game wrapper ────────────────────────────────────────────── */
 .game-wrapper {
+  width: 100%;
+  min-height: 100dvh;
   padding: 1.5rem 1rem 3rem;
   max-width: 660px;
   margin: 0 auto;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 /* ── Glassmorphism scene card ─────────────────────────────────────── */

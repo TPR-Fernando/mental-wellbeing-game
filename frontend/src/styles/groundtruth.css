@@ -7,8 +7,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   padding: 1.5rem 1rem 3rem;
   position: relative;
+  min-height: 100dvh;
+  box-sizing: border-box;
 }
 
 /* ── Glassmorphism card (mirrors .scene-card / .warning-card) ─────── */
@@ -27,7 +30,10 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.82);
   position: relative;
   overflow: hidden;
-  height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  max-height: calc(100dvh - 3rem);
 }
 
 /* Spectrum gradient bar across the top (mirrors .home-card::before) */
@@ -78,10 +84,14 @@
 /* ── Scrollable content area ──────────────────────────────────────── */
 .qre-content {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .scrollable-content {
-  max-height: 62vh;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding-right: 0.5rem;
   scrollbar-width: thin;
@@ -335,8 +345,7 @@
   }
 
   .scrollable-content {
-    max-height: none; /* Let it scroll the full page on mobile */
-    overflow-y: visible;
+    overflow-y: auto;
     padding-right: 0;
   }
 }
@@ -421,6 +430,10 @@
   color: #5a4e7a;
   line-height: 1.7;
   margin-bottom: 1.5rem;
+}
+
+.completion-card {
+  overflow-y: auto;
 }
 
 .completion-disclaimer {

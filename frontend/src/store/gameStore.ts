@@ -2,25 +2,58 @@ import { create } from 'zustand';
 
 const SESSION_STORAGE_KEY = 'mwg_session';
 
-function loadPersistedSession(): { sessionId: string | null; consentGiven: boolean; userId: string | null } {
-  if (typeof window === 'undefined') return { sessionId: null, consentGiven: false, userId: null };
+interface PersistedSession {
+  sessionId: string | null;
+  consentGiven: boolean;
+  userId: string | null;
+  wellbeingSummary: string | null;
+  groundTruthScores: { who5Score: number; swemwbsScore: number } | null;
+  predictedScores: { who5Predicted: number; swemwbsPredicted: number } | null;
+}
+
+function loadPersistedSession(): PersistedSession {
+  const empty: PersistedSession = {
+    sessionId: null,
+    consentGiven: false,
+    userId: null,
+    wellbeingSummary: null,
+    groundTruthScores: null,
+    predictedScores: null,
+  };
+  if (typeof window === 'undefined') return empty;
   try {
     const raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
-    if (!raw) return { sessionId: null, consentGiven: false, userId: null };
+    if (!raw) return empty;
     const parsed = JSON.parse(raw);
     return {
       sessionId: typeof parsed.sessionId === 'string' ? parsed.sessionId : null,
       consentGiven: parsed.consentGiven === true,
       userId: typeof parsed.userId === 'string' ? parsed.userId : null,
+      wellbeingSummary: typeof parsed.wellbeingSummary === 'string' ? parsed.wellbeingSummary : null,
+      groundTruthScores:
+        parsed.groundTruthScores &&
+        typeof parsed.groundTruthScores.who5Score === 'number' &&
+        typeof parsed.groundTruthScores.swemwbsScore === 'number'
+          ? parsed.groundTruthScores
+          : null,
+      predictedScores:
+        parsed.predictedScores &&
+        typeof parsed.predictedScores.who5Predicted === 'number' &&
+        typeof parsed.predictedScores.swemwbsPredicted === 'number'
+          ? parsed.predictedScores
+          : null,
     };
   } catch {
-    return { sessionId: null, consentGiven: false, userId: null };
+    return empty;
   }
 }
 
-function persistSession(sessionId: string, consentGiven: boolean, userId?: string | null) {
+// Reads-then-writes so any single field can be updated without clobbering the others
+// (wellbeingSummary and groundTruthScores are set at different points in the flow).
+function persistSession(patch: Partial<Omit<PersistedSession, 'sessionId'>> & { sessionId: string }) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ sessionId, consentGiven, userId: userId ?? null }));
+  const current = loadPersistedSession();
+  window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ ...current, ...patch }));
 }
 
 interface GameState {
@@ -34,6 +67,7 @@ interface GameState {
   userId: string | null;
   wellbeingSummary: string | null;
   groundTruthScores: { who5Score: number; swemwbsScore: number } | null;
+  predictedScores: { who5Predicted: number; swemwbsPredicted: number } | null;
   recordChoice: (sceneIndex: number, weight: number) => void;
   recordReactionTime: (sceneIndex: number, ms: number) => void;
   recordText: (sceneIndex: number, text: string) => void;
@@ -44,6 +78,7 @@ interface GameState {
   setWellbeingSummary: (summary: string) => void;
   setUserId: (uid: string) => void;
   setGroundTruthScores: (scores: { who5Score: number; swemwbsScore: number }) => void;
+  setPredictedScores: (scores: { who5Predicted: number; swemwbsPredicted: number }) => void;
   medianReactionTime: () => number | null;
 }
 
@@ -59,8 +94,9 @@ export const useGameStore = create<GameState>((set, get) => {
     sessionId: persisted.sessionId,
     consentGiven: persisted.consentGiven,
     userId: persisted.userId,
-    wellbeingSummary: null,
-    groundTruthScores: null,
+    wellbeingSummary: persisted.wellbeingSummary,
+    groundTruthScores: persisted.groundTruthScores,
+    predictedScores: persisted.predictedScores,
 
     recordChoice: (sceneIndex, weight) =>
       set((state) => ({
@@ -109,18 +145,40 @@ export const useGameStore = create<GameState>((set, get) => {
 
     setSession: (sessionId) =>
       set((state) => {
-        persistSession(sessionId, true, state.userId);
+        persistSession({ sessionId, consentGiven: true, userId: state.userId, wellbeingSummary: state.wellbeingSummary, groundTruthScores: state.groundTruthScores, predictedScores: state.predictedScores });
         return { sessionId, consentGiven: true };
       }),
 
-    setWellbeingSummary: (summary) => set({ wellbeingSummary: summary }),
+    setWellbeingSummary: (summary) =>
+      set((state) => {
+        if (state.sessionId) {
+          persistSession({ sessionId: state.sessionId, consentGiven: state.consentGiven, userId: state.userId, wellbeingSummary: summary, groundTruthScores: state.groundTruthScores, predictedScores: state.predictedScores });
+        }
+        return { wellbeingSummary: summary };
+      }),
 
     setUserId: (uid) =>
       set((state) => {
-        if (state.sessionId) persistSession(state.sessionId, state.consentGiven, uid);
+        if (state.sessionId) {
+          persistSession({ sessionId: state.sessionId, consentGiven: state.consentGiven, userId: uid, wellbeingSummary: state.wellbeingSummary, groundTruthScores: state.groundTruthScores, predictedScores: state.predictedScores });
+        }
         return { userId: uid };
       }),
 
-    setGroundTruthScores: (scores) => set({ groundTruthScores: scores }),
+    setGroundTruthScores: (scores) =>
+      set((state) => {
+        if (state.sessionId) {
+          persistSession({ sessionId: state.sessionId, consentGiven: state.consentGiven, userId: state.userId, wellbeingSummary: state.wellbeingSummary, groundTruthScores: scores, predictedScores: state.predictedScores });
+        }
+        return { groundTruthScores: scores };
+      }),
+
+    setPredictedScores: (scores) =>
+      set((state) => {
+        if (state.sessionId) {
+          persistSession({ sessionId: state.sessionId, consentGiven: state.consentGiven, userId: state.userId, wellbeingSummary: state.wellbeingSummary, groundTruthScores: state.groundTruthScores, predictedScores: scores });
+        }
+        return { predictedScores: scores };
+      }),
   };
 });

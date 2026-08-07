@@ -30,6 +30,10 @@ function swemwbsDescriptor(score: number): string {
   return 'Below average';
 }
 
+function averageScores(a: number, b: number): number {
+  return (a + b) / 2;
+}
+
 // Final screen — no further action is possible from here (no replay), per
 // COPILOT_BUILD_GUIDE.md Section 8.4. Not behind RequireConsent's game routes so it stays
 // reachable even after localStorage state is cleared, but it only ever shows the summary
@@ -37,6 +41,7 @@ function swemwbsDescriptor(score: number): string {
 export const Completion = () => {
   const wellbeingSummary = useGameStore((state) => state.wellbeingSummary);
   const groundTruthScores = useGameStore((state) => state.groundTruthScores);
+  const predictedScores = useGameStore((state) => state.predictedScores);
 
   return (
     <div className="groundTruthWrapper completion-wrapper">
@@ -107,6 +112,81 @@ export const Completion = () => {
                 </span>
                 <span className="completion-score-descriptor">
                   {swemwbsDescriptor(groundTruthScores.swemwbsScore)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Game-predicted scores, shown alongside the direct questionnaire for comparison */}
+        {predictedScores && (
+          <div className="completion-scores-section">
+            <h2 className="qre-section-title" style={{ marginBottom: '0.75rem' }}>
+              Game-Predicted Scores
+            </h2>
+            <p className="qre-section-text" style={{ marginBottom: '1rem' }}>
+              Estimated from your in-game choices and mini-game responses, for comparison with your
+              direct answers above:
+            </p>
+            <div className="completion-score-grid">
+              <div className="completion-score-card">
+                <span className="completion-score-label">WHO-5 (predicted)</span>
+                <span className="completion-score-value">
+                  {Math.round(predictedScores.who5Predicted)}
+                  <span className="completion-score-max">/100</span>
+                </span>
+                <span className="completion-score-descriptor">
+                  {who5Descriptor(predictedScores.who5Predicted)}
+                </span>
+              </div>
+
+              <div className="completion-score-card">
+                <span className="completion-score-label">SWEMWBS (predicted)</span>
+                <span className="completion-score-value">
+                  {Math.round(predictedScores.swemwbsPredicted)}
+                  <span className="completion-score-max">/35</span>
+                </span>
+                <span className="completion-score-descriptor">
+                  {swemwbsDescriptor(predictedScores.swemwbsPredicted)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Combined score across both sources */}
+        {groundTruthScores && predictedScores && (
+          <div className="completion-scores-section">
+            <h2 className="qre-section-title" style={{ marginBottom: '0.75rem' }}>
+              Combined Score
+            </h2>
+            <p className="qre-section-text" style={{ marginBottom: '1rem' }}>
+              A blended view combining your direct questionnaire answers and the game-based estimate:
+            </p>
+            <div className="completion-score-grid">
+              <div className="completion-score-card">
+                <span className="completion-score-label">WHO-5 (combined)</span>
+                <span className="completion-score-value">
+                  {Math.round(averageScores(groundTruthScores.who5Score, predictedScores.who5Predicted))}
+                  <span className="completion-score-max">/100</span>
+                </span>
+                <span className="completion-score-descriptor">
+                  {who5Descriptor(
+                    averageScores(groundTruthScores.who5Score, predictedScores.who5Predicted),
+                  )}
+                </span>
+              </div>
+
+              <div className="completion-score-card">
+                <span className="completion-score-label">SWEMWBS (combined)</span>
+                <span className="completion-score-value">
+                  {Math.round(averageScores(groundTruthScores.swemwbsScore, predictedScores.swemwbsPredicted))}
+                  <span className="completion-score-max">/35</span>
+                </span>
+                <span className="completion-score-descriptor">
+                  {swemwbsDescriptor(
+                    averageScores(groundTruthScores.swemwbsScore, predictedScores.swemwbsPredicted),
+                  )}
                 </span>
               </div>
             </div>

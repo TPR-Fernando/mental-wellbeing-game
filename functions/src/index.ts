@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import * as admin from "firebase-admin";
+import { GoogleGenAI } from "@google/genai";
 admin.initializeApp();
 const db = getFirestore();
 
@@ -10,15 +11,17 @@ const DAILY_LLM_LIMIT = 400; // ~3 calls x 120 participants + buffer
 const PER_SESSION_LLM_LIMIT = 3;
 
 // Check https://ai.google.dev/models for the current recommended model ID.
-// gemini-1.5-flash is fast, cheap, and ideal for short-form generation.
-const GEMINI_MODEL = "gemini-1.5-flash";
+// gemini-3.x models aren't yet published to this project's Vertex AI catalog (404 NOT_FOUND);
+// gemini-2.5-flash is confirmed available and stable there.
+const GEMINI_MODEL = "gemini-2.5-flash";
+// Vertex AI region; must match a region where the model is available.
+const VERTEX_LOCATION = "us-central1";
 
 type Mode = "generate_interview_q1" | "generate_interview_q2" | "generate_summary";
 
 const ALLOWED_MODES: Mode[] = ["generate_interview_q1", "generate_interview_q2", "generate_summary"];
 
 export const nlpService = onCall(
-  { secrets: ["GOOGLE_GEMINI_API_KEY"] }, // binds the secret so process.env.GOOGLE_GEMINI_API_KEY is populated at runtime
   async (request) => {
     const { mode, payload, sessionId } = request.data as {
       mode: Mode;
@@ -52,7 +55,6 @@ export const nlpService = onCall(
     }
 
     try {
-      if (!process.env.GOOGLE_GEMINI_API_KEY) throw new Error("no_api_key");
       const result = await callGemini(mode, payload);
       await usageRef.set({ count: FieldValue.increment(1) }, { merge: true });
       await sessionRef.set({ llmCallCount: FieldValue.increment(1) }, { merge: true });
@@ -115,38 +117,24 @@ async function callGemini(mode: Mode, payload: unknown): Promise<{ question?: st
     maxWords = "80-120 words";
   }
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${process.env.GOOGLE_GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: `${userPrompt} Keep the response ${maxWords}.`,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          maxOutputTokens: 300,
-        },
-      }),
-    }
-  );
+  // Authenticates via the Cloud Function's own service account (ADC) — no manual key needed.
+  const ai = new GoogleGenAI({
+    vertexai: true,
+    project: process.env.GCLOUD_PROJECT,
+    location: VERTEX_LOCATION,
+  });
+  const response = await ai.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: `${userPrompt} Keep the response ${maxWords}.`,
+    config: {
+      maxOutputTokens: 500,
+      // Disabled: this is short-form text generation, not a reasoning task, and thinking
+      // tokens were eating the output budget and truncating responses mid-sentence.
+      thinkingConfig: { thinkingBudget: 0 },
+    },
+  });
 
-  if (!response.ok) {
-    throw new Error(`Gemini API error: ${response.status}`);
-  }
-
-  const data = (await response.json()) as {
-    candidates?: { content?: { parts?: { text?: string }[] } }[];
-  };
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+  const text = response.text?.trim();
   if (!text) throw new Error("empty_response");
 
   if (mode === "generate_summary") {

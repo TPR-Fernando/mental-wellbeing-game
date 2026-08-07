@@ -1,9 +1,10 @@
 /* Liquid background blobs — consent page only */
 .consent-wrapper {
   width: 100%;
-  height: 90vh;
+  min-height: 100dvh;
   position: relative;
   isolation: isolate;
+  box-sizing: border-box;
 }
 
 .consent-liquid {
@@ -64,6 +65,10 @@
   padding: 2.5rem 2.5rem 2.75rem;
   max-width: 680px;
   border-radius: 20px 5px 20px 5px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  max-height: calc(100dvh - 3rem);
 }
 
 /* Header */
@@ -115,7 +120,8 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  max-height: 60vh;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 0.5rem;
 }
