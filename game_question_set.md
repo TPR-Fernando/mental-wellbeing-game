@@ -1,7 +1,5 @@
 # Game Decision Points — WHO-5 & SWEMWBS Mapping
 **FYRP: Implicit Well-Being Detection via Narrative Game**  
-*For supervisor/psychotherapist review — not finalised*
-
 ---
 
 ## Scale Reference

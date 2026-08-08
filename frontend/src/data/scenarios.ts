@@ -42,8 +42,8 @@ export const scenarios: Scene[] = [
     text: "Your alarm goes off at 7.30. You've got a 9am lecture on the other side of campus. You reach for your phone.",
     choices: [
       { id: "A", text: "Awake before it even finishes ringing. Straight up, feeling good.", weight: 2, layout: { x: 20, y: 1, width: 22, height: 92 } },
-      { id: "B", text: "A bit sleepy, but no real fight getting up.", weight: 1, layout: { x: 55, y: 14, width: 10, height: 74 } },
-      { id: "C", text: "Snooze once, lie there a bit, then get up. Whatever.", weight: 0, layout: { x: 25, y:28, width: 15, height: 80 } },
+      { id: "B", text: "A bit groggy, but it's easy enough to get up.", weight: 1, layout: { x: 55, y: 14, width: 10, height: 74 } },
+      { id: "C", text: "Snooze once. Lie there a bit, then get up.", weight: 0, layout: { x: 25, y:28, width: 15, height: 80 } },
       { id: "D", text: "Groggy and heavy. Takes a couple snoozes to actually move.", weight: -1, layout: { x: 60, y: 33, width: 12, height: 86 } },
       { id: "E", text: "Body just won't cooperate. Dreading the day already.", weight: -2, layout: { x: 32, y: 46, width: 30, height: 76 } }
     ],
@@ -58,7 +58,7 @@ export const scenarios: Scene[] = [
       { id: "A", text: "Move fast, feel sharp. Even glance over your notes.", weight: 2, layout: { x: 20, y: 10, width: 31, height: 90 } },
       { id: "B", text: "Decent pace, nothing to complain about.", weight: 1, layout: { x: 58, y: 19, width: 25, height: 76 } },
       { id: "C", text: "Going through the motions. Just routine.", weight: 0, layout: { x: 26, y: 28, width: 25, height: 78 } },
-      { id: "D", text: "Everything feels heavier than it should. Cutting it close.", weight: -1, layout: { x: 62, y: 38, width: 33, height: 86 } },
+      { id: "D", text: "Everything feels heavier than it should. Running late.", weight: -1, layout: { x: 62, y: 38, width: 33, height: 86 } },
       { id: "E", text: "Can barely get moving. Nearly forget your student ID.", weight: -2, layout: { x: 34, y: 47, width: 30, height: 82 } }
     ]
   },
@@ -71,7 +71,7 @@ export const scenarios: Scene[] = [
       { id: "A", text: "Lots coming up, but it feels like it's heading somewhere good.", weight: 2, layout: { x: 16, y: 10, width: 34, height: 94 } },
       { id: "B", text: "Think about it a little, feel mostly okay.", weight: 1, layout: { x: 64, y: 19, width: 25, height: 74 } },
       { id: "C", text: "Don't really dwell on it. Earphones in, mind elsewhere.", weight: 0, layout: { x: 24, y: 28, width: 29, height: 82 } },
-      { id: "D", text: "Same worry creeps back in, never really worked through.", weight: -1, layout: { x: 60, y: 38, width: 32, height: 86 } },
+      { id: "D", text: "Same worry creeps back in, never really goes away.", weight: -1, layout: { x: 60, y: 38, width: 32, height: 86 } },
       { id: "E", text: "Worry won't let up. Just keeps circling.", weight: -2, layout: { x: 38, y: 47, width: 27, height: 80 } }
     ],
     freeTextPrompt: "What's been on your mind about the future lately?"
@@ -84,7 +84,7 @@ export const scenarios: Scene[] = [
     choices: [
       { id: "A", text: "Genuinely curious. Leaning in, taking notes without thinking.", weight: 2, layout: { x: 20, y: 10, width: 33, height: 92 } },
       { id: "B", text: "Interesting enough to pay proper attention.", weight: 1, layout: { x: 62, y: 20, width: 26, height: 76 } },
-      { id: "C", text: "Listening, taking notes. Just not invested.", weight: 0, layout: { x: 30, y: 29, width: 27, height: 80 } },
+      { id: "C", text: "Listening, taking notes. Just not that into it.", weight: 0, layout: { x: 30, y: 29, width: 27, height: 80 } },
       { id: "D", text: "Attention drifts. Doesn't feel like it matters right now.", weight: -1, layout: { x: 58, y: 38, width: 31, height: 84 } },
       { id: "E", text: "Can't focus at all. Nothing feels worth the effort.", weight: -2, layout: { x: 26, y: 47, width: 29, height: 82 } }
     ]
@@ -96,7 +96,7 @@ export const scenarios: Scene[] = [
     text: "The lecturer asks the class a question, not directed at anyone. Something comes to mind for you.",
     choices: [
       { id: "A", text: "Think it through, raise your hand. Feel sure enough.", weight: 2, layout: { x: 22, y: 10, width: 32, height: 90 } },
-      { id: "B", text: "Got an answer, share it if no one beats you to it.", weight: 1, layout: { x: 58, y: 20, width: 30, height: 78 } },
+      { id: "B", text: "Got an answer, share it if no one else answers first.", weight: 1, layout: { x: 58, y: 20, width: 30, height: 78 } },
       { id: "C", text: "Form an answer, hold back, wait and see.", weight: 0, layout: { x: 20, y: 29, width: 27, height: 80 } },
       { id: "D", text: "Had the thought, talk yourself out of saying it.", weight: -1, layout: { x: 60, y: 38, width: 29, height: 82 } },
       { id: "E", text: "Don't trust your own thinking. Stay quiet anyway.", weight: -2, layout: { x: 32, y: 47, width: 26, height: 80 } }
@@ -109,10 +109,10 @@ export const scenarios: Scene[] = [
     text: "Your project group meets after the lecture. One member hasn't done their part and the deadline is two days away.",
     choices: [
       { id: "A", text: "Bring it up calmly. Suggest splitting the leftover work.", weight: 2, layout: { x: 18, y: 10, width: 34, height: 92 } },
-      { id: "B", text: "Mention it, help sort a plan, some back and forth.", weight: 1, layout: { x: 56, y: 19, width: 29, height: 78 } },
+      { id: "B", text: "Mention it, help sort a plan, a bit of discussion.", weight: 1, layout: { x: 56, y: 19, width: 29, height: 78 } },
       { id: "C", text: "Quietly take on more yourself. Avoid the conversation.", weight: 0, layout: { x: 26, y: 28, width: 29, height: 82 } },
       { id: "D", text: "Frustrated, but say little. Pull back, focus on your part.", weight: -1, layout: { x: 60, y: 38, width: 31, height: 84 } },
-      { id: "E", text: "Shut down completely. Bare minimum, resentment builds.", weight: -2, layout: { x: 36, y: 47, width: 31, height: 82 } }
+      { id: "E", text: "Shut down completely. Do the bare minimum and get through it.", weight: -2, layout: { x: 36, y: 47, width: 31, height: 82 } }
     ],
     freeTextPrompt: "How do you usually handle situations like this?"
   },
@@ -139,7 +139,7 @@ export const scenarios: Scene[] = [
       { id: "B", text: "Send your notes over, tell them to ask if unclear.", weight: 1, layout: { x: 62, y: 16, width: 30, height: 78 } },
       { id: "C", text: "Say you'll try later, without really committing.", weight: 0, layout: { x: 26, y: 25, width: 27, height: 80 } },
       { id: "D", text: "Feel a bit bad, but say you can't right now.", weight: -1, layout: { x: 58, y: 32, width: 29, height: 82 } },
-      { id: "E", text: "Leave it on read. Don't feel like dealing with it.", weight: -2, layout: { x: 34, y: 42, width: 27, height: 80 } }
+      { id: "E", text: "Don't reply. Can't deal with it right now.", weight: -2, layout: { x: 34, y: 42, width: 27, height: 80 } }
     ]
   },
   {
@@ -148,9 +148,9 @@ export const scenarios: Scene[] = [
     scaleItem: "WHO-5 W3",
     text: "It's 3pm. You've got a two-hour study block before your next thing. You sit down at a desk with your laptop.",
     choices: [
-      { id: "A", text: "Second wind. Headphones in, straight into it.", weight: 2, layout: { x: 22, y: 10, width: 30, height: 86 } },
+      { id: "A", text: "Feel energised again. Headphones in, straight into it.", weight: 2, layout: { x: 22, y: 10, width: 30, height: 86 } },
       { id: "B", text: "Settle in after a short warm-up, get a decent amount done.", weight: 1, layout: { x: 64, y: 19, width: 31, height: 82 } },
-      { id: "C", text: "Browse notes a bit before easing into something.", weight: 0, layout: { x: 20, y: 28, width: 27, height: 80 } },
+      { id: "C", text: "Browse notes a bit before starting properly.", weight: 0, layout: { x: 20, y: 28, width: 27, height: 80 } },
       { id: "D", text: "Feel heavy, unfocused. Takes a while to actually start.", weight: -1, layout: { x: 62, y: 38, width: 30, height: 82 } },
       { id: "E", text: "Completely drained. Barely get anything done all afternoon.", weight: -2, layout: { x: 36, y: 47, width: 31, height: 82 } }
     ]
@@ -159,9 +159,9 @@ export const scenarios: Scene[] = [
     id: 10,
     title: "Assignment Block",
     scaleItem: "SWEMWBS S5",
-    text: "You hit a part of the assignment you don't get. You've read it twice and it's still not clicking.",
+    text: "You hit a part of the assignment you don't get. You've read it twice and it still doesn't make sense.",
     choices: [
-      { id: "A", text: "Break it into pieces, work it from a different angle. Takes a while, but it clicks.", weight: 2, layout: { x: 14, y: 10, width: 35, height: 96 } },
+      { id: "A", text: "Break it into pieces, work it from a different angle. Takes a while, but it finally makes sense.", weight: 2, layout: { x: 14, y: 10, width: 35, height: 96 } },
       { id: "B", text: "Short break, come back, work it out reasonably well.", weight: 1, layout: { x: 64, y: 20, width: 30, height: 78 } },
       { id: "C", text: "Leave it, switch to another section for now.", weight: 0, layout: { x: 24, y: 29, width: 25, height: 78 } },
       { id: "D", text: "Confusion builds. Drift to something else without meaning to.", weight: -1, layout: { x: 60, y: 38, width: 31, height: 82 } },
@@ -175,7 +175,7 @@ export const scenarios: Scene[] = [
     scaleItem: "SWEMWBS S7",
     text: "Your group chat is going back and forth about which framework to use. Two people disagree and the conversation's stuck. Someone tags you: \"you decide, we're moving on.\" A countdown starts.",
     choices: [
-      { id: "A", text: "Go with what they suggested, it covers what we need.", weight: 2, layout: { x: 34, y: 14, width: 32, height: 82 } },
+      { id: "A", text: "Go with what was suggested, it covers what we need.", weight: 2, layout: { x: 34, y: 14, width: 32, height: 82 } },
       { id: "B", text: "Whatever's fine with me, you all decide.", weight: -1, layout: { x: 36, y: 30, width: 27, height: 76 } }
     ],
     timedChoice: { limitMs: 16000, timeoutWeight: -2 }
@@ -197,7 +197,7 @@ export const scenarios: Scene[] = [
     id: 13,
     title: "A Quiet Moment of Worry",
     scaleItem: "WHO-5 W2",
-    text: "It's early evening, you're alone, maybe making tea or just lying down. A thought about something uncertain surfaces on its own.",
+    text: "It's early evening, you're alone, maybe making tea or just lying down. A thought about something uncertain pops into your head.",
     choices: [
       { id: "A", text: "Notice it, sit with it a second, let it go pretty easily.", weight: 2, layout: { x: 16, y: 10, width: 33, height: 92 } },
       { id: "B", text: "Think about it a bit, then get distracted, move on.", weight: 1, layout: { x: 64, y: 18, width: 30, height: 78 } },

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
-import { saveGroundTruth } from '../services/firestoreSession';
+import { saveGroundTruth, savePreference } from '../services/firestoreSession';
 import { getAudioCtxInstance, playHoverSound, playSelectSound } from './Home'; // Reuse audio functions from Home
 
 // Standard WHO-5 Well-Being Index items, 6-point scale (0-5).
@@ -33,6 +33,17 @@ const SWEMWBS_ITEMS = [
 ];
 const SWEMWBS_SCALE = ['None of the time', 'Rarely', 'Some of the time', 'Often', 'All of the time'];
 
+// ── Post-questionnaire preference question ───────────────────────────
+const PREFERENCE_QUESTION =
+  'Would you prefer playing a game like this over filling out a standard questionnaire for assessing mental well-being?';
+const PREFERENCE_OPTIONS = [
+  { value: 'strongly_prefer_game', label: 'Strongly prefer the game' },
+  { value: 'slightly_prefer_game', label: 'Slightly prefer the game' },
+  { value: 'no_preference', label: 'No preference' },
+  { value: 'slightly_prefer_form', label: 'Slightly prefer a standard form' },
+  { value: 'strongly_prefer_form', label: 'Strongly prefer a standard form' },
+];
+
 // ── Particles ────────────────────────────────────────────────────────
 const PARTICLE_COLORS = ['#7c5cfc', '#5b8fff', '#34d399', '#f59e0b', '#f472b6'];
 
@@ -61,6 +72,11 @@ export const GroundTruth = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Post-questionnaire preference step
+  const [showPreference, setShowPreference] = useState(false);
+  const [preferenceAnswer, setPreferenceAnswer] = useState<string | null>(null);
+  const [savingPreference, setSavingPreference] = useState(false);
+
   const totalQuestions = WHO5_ITEMS.length + SWEMWBS_ITEMS.length;
   const answeredCount = Object.keys(who5Answers).length + Object.keys(swemwbsAnswers).length;
   const allAnswered = answeredCount === totalQuestions;
@@ -88,13 +104,34 @@ export const GroundTruth = () => {
       setGroundTruthScores({ who5Score: who5Sum * 4, swemwbsScore: swemwbsSum });
 
       await saveGroundTruth(sessionId, { who5, swemwbs });
-      navigate('/completion');
+      // Questionnaire submitted — surface the preference question before finishing.
+      setShowPreference(true);
     } catch (err) {
       console.error('Failed to save ground-truth questionnaire:', err);
       setError("We couldn't save your answers just now. Please check your connection and try again.");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handlePreferenceSelect = (value: string) => {
+    setPreferenceAnswer(value);
+    const ctx = getAudioCtxInstance(audioCtxRef);
+    playSelectSound(ctx);
+  };
+
+  const handlePreferenceSubmit = async () => {
+    if (!preferenceAnswer || !sessionId) return;
+    setSavingPreference(true);
+    try {
+      await savePreference(sessionId, preferenceAnswer);
+    } catch (err) {
+      console.error('Failed to save preference:', err);
+      setError("We couldn't save your feedback just now, but you can still continue.");
+    } finally {
+      setSavingPreference(false);
+    }
+    navigate('/completion');
   };
 
   const handleButtonHover = () => {
@@ -139,6 +176,8 @@ export const GroundTruth = () => {
         <div className="qre-rule" />
         
         {/* Scrollable content section */}
+        {!showPreference ? (
+          <>
         <div className="qre-content scrollable-content">
           <div className="qre-section">
             <p className="qre-section-text">
@@ -208,20 +247,58 @@ export const GroundTruth = () => {
           </div>
         </div>
 
-        {error && (
-          <p style={{ color: '#c62828' }} role="alert">
-            {error}
-          </p>
-        )}
+          {error && (
+            <p style={{ color: '#c62828' }} role="alert">
+              {error}
+            </p>
+          )}
 
-        <button
-          onClick={handleSubmit}
-          disabled={!allAnswered || submitting}
-          className="qre-button qre-continue-button"
-          onMouseEnter={handleButtonHover}
-        >
-          {submitting ? 'Submitting…' : 'Finish'}
-        </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!allAnswered || submitting}
+            className="qre-button qre-continue-button"
+            onMouseEnter={handleButtonHover}
+          >
+            {submitting ? 'Submitting…' : 'Finish'}
+          </button>
+          </>
+        ) : (
+          <div className="qre-content scrollable-content preference-step">
+            <div className="qre-section">
+              <p className="qre-section-text" style={{ marginBottom: '1rem' }}>
+                One last question before you're done.
+              </p>
+              <h3 className="preference-question">{PREFERENCE_QUESTION}</h3>
+              <div className="preference-options">
+                {PREFERENCE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`preference-option${preferenceAnswer === opt.value ? ' selected' : ''}`}
+                    onClick={() => handlePreferenceSelect(opt.value)}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {error && (
+              <p style={{ color: '#c62828' }} role="alert">
+                {error}
+              </p>
+            )}
+
+            <button
+              onClick={handlePreferenceSubmit}
+              disabled={!preferenceAnswer || savingPreference}
+              className="qre-button"
+              onMouseEnter={handleButtonHover}
+            >
+              {savingPreference ? 'Saving…' : 'Continue'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

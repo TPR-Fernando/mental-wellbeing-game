@@ -108,7 +108,7 @@ async function callGemini(mode: Mode, payload: unknown): Promise<{ question?: st
     userPrompt =
       `Write a short (80-120 word), warm, non-clinical well-being summary for a participant who just ` +
       `finished an interactive narrative about a student's day and a brief reflective interview. ` +
-      `Behavioural data from their session — ${behavioralContext}. ` +
+      `Behavioural data from their session: ${behavioralContext}. ` +
       `Predicted well-being indicators: WHO-5 score ${Math.round(who5Predicted)}/100, SWEMWBS score ${Math.round(swemwbsPredicted)}/35. ` +
       `Their interview reflections: ${interviewAnswers.map((a, i) => `(${i + 1}) ${a}`).join(" ")}. ` +
       `${commonInstruction} Personalise the summary to their specific patterns above. ` +
@@ -117,7 +117,7 @@ async function callGemini(mode: Mode, payload: unknown): Promise<{ question?: st
     maxWords = "80-120 words";
   }
 
-  // Authenticates via the Cloud Function's own service account (ADC) — no manual key needed.
+  // Authenticates via the Cloud Function's own service account (ADC), so no manual key is needed.
   const ai = new GoogleGenAI({
     vertexai: true,
     project: process.env.GCLOUD_PROJECT,

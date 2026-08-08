@@ -74,7 +74,8 @@ export const Completion = () => {
         {/* Decorative rule */}
         <div className="qre-rule" />
 
-        {/* Personalised Gemini summary */}
+        <div className="qre-content scrollable-content">
+          {/* Personalised Gemini summary */}
         {wellbeingSummary && (
           <div className="completion-summary-box">
             <p className="completion-summary-text">{wellbeingSummary}</p>
@@ -210,6 +211,7 @@ export const Completion = () => {
             <strong>Crisis support:</strong> Samaritans 116 123 &middot; Crisis Text Line: Text
             &ldquo;HELLO&rdquo; to 741741 &middot; Emergency: 911
           </p>
+          </div>
         </div>
       </div>
     </div>

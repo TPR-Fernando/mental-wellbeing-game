@@ -5,6 +5,13 @@ import { functions } from '../firebase';
 // client to a third-party API. See COPILOT_BUILD_GUIDE.md Section 3.
 const callNlpService = httpsCallable(functions, 'nlpService');
 
+// Keeps AI-generated copy sounding warm and human. Replaces em/en dashes ("—" / "–") with a
+// natural comma so the participant never reads a clipped, formal dash, even if the model wrote one.
+function humanizeText(text: string): string {
+  if (!text) return text;
+  return text.replace(/\s*[—–]\s*/g, ', ').trim();
+}
+
 // Client-side fallbacks in case the callable itself is unreachable (e.g. participant is
 // offline) — the Cloud Function has its own server-side fallback for LLM/rate-limit
 // failures, but a network failure reaching the function at all needs a local backstop too,
@@ -25,7 +32,7 @@ export async function generateInterviewQ1(sessionId: string, choiceSummary: stri
       sessionId,
       payload: { choiceSummary },
     });
-    return (result.data as { question?: string }).question ?? LOCAL_Q1_FALLBACK;
+    return humanizeText((result.data as { question?: string }).question ?? LOCAL_Q1_FALLBACK);
   } catch (err) {
     console.error('generate_interview_q1 failed:', err);
     return LOCAL_Q1_FALLBACK;
@@ -43,7 +50,7 @@ export async function generateInterviewQ2(
       sessionId,
       payload: { previousQ, previousA },
     });
-    return (result.data as { question?: string }).question ?? LOCAL_Q2_FALLBACK;
+    return humanizeText((result.data as { question?: string }).question ?? LOCAL_Q2_FALLBACK);
   } catch (err) {
     console.error('generate_interview_q2 failed:', err);
     return LOCAL_Q2_FALLBACK;
@@ -65,7 +72,7 @@ export async function generateSummary(
       sessionId,
       payload: { who5Predicted, swemwbsPredicted, interviewAnswers, choiceSummary, miniGameSummary, reactionTimeSummary },
     });
-    return (result.data as { summary?: string }).summary ?? LOCAL_SUMMARY_FALLBACK;
+    return humanizeText((result.data as { summary?: string }).summary ?? LOCAL_SUMMARY_FALLBACK);
   } catch (err) {
     console.error('generate_summary failed:', err);
     return LOCAL_SUMMARY_FALLBACK;

@@ -4,6 +4,40 @@ import { useGameStore } from '../store/gameStore';
 import { scenarios } from '../data/scenarios';
 import { generateInterviewQ1, generateInterviewQ2, generateSummary } from '../services/llmService';
 import { savePostGameInterview, saveWellbeingSummary } from '../services/firestoreSession';
+import { scoreText } from '../utils/sentiment';
+
+// ── Particles (same pattern as Home / Warning / GroundTruth / Completion) ──
+const PARTICLE_COLORS = ['#7c5cfc', '#5b8fff', '#34d399', '#f59e0b', '#f472b6'];
+
+interface Particle { id: number; x: number; y: number; size: number; duration: number; delay: number; color: string; }
+
+const PARTICLES: Particle[] = Array.from({ length: 22 }, (_, i) => ({
+  id: i,
+  x: Math.random() * 100,
+  y: 10 + Math.random() * 90,
+  size: 4 + Math.random() * 7,
+  duration: 5 + Math.random() * 7,
+  delay: Math.random() * 6,
+  color: PARTICLE_COLORS[i % PARTICLE_COLORS.length],
+}));
+
+// ── In-game snapshot score ────────────────────────────────────────────
+// A composite 0-100 score summarising everything that happened in-game:
+// story choices + mini-games (wellbeing tendency), response timing
+// (hesitation) and NLP sentiment of the participant's written reflections.
+
+interface SnapshotPart { label: string; value: number; note: string; }
+interface Snapshot { overall: number; parts: SnapshotPart[]; }
+
+function clampUnit(v: number): number {
+  return Math.max(0, Math.min(1, v));
+}
+
+function snapshotDescriptor(score: number): string {
+  if (score >= 72) return 'Positive in-game signals';
+  if (score >= 52) return 'Balanced in-game signals';
+  return 'Signals worth reflecting on';
+}
 
 // Builds a short pattern description for generate_interview_q1 — see COPILOT_BUILD_GUIDE.md
 // Section 3 ("leaned toward avoidance in 6/15 scenes, high hesitation on social scenes").
@@ -29,7 +63,7 @@ type Stage =
 
 export const Summary = () => {
   const navigate = useNavigate();
-  const { choices, miniGameWeights, reactionTimes, sessionId, setWellbeingSummary, setPredictedScores } = useGameStore();
+  const { choices, miniGameWeights, reactionTimes, freeTextAnswers, sessionId, setWellbeingSummary, setPredictedScores } = useGameStore();
 
   const [stage, setStage] = useState<Stage>('loading_q1');
   const [q1, setQ1] = useState('');
@@ -42,6 +76,7 @@ export const Summary = () => {
   const [choiceSummary, setChoiceSummary] = useState('');
   const [miniGameSummary, setMiniGameSummary] = useState('');
   const [reactionTimeSummary, setReactionTimeSummary] = useState('');
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
 
   const startedRef = useRef(false);
 
@@ -70,7 +105,7 @@ export const Summary = () => {
       }
     });
 
-    // Fold in mini-game weights (-3..+3 range from 3 games × -1/0/+1) as a small adjustment
+    // Fold in mini-game weights (3 games, each a -1/0/+1 outcome) as a small adjustment
     // to the AI summary tone. This does NOT go into the real groundTruth questionnaire.
     const miniGameTotal = Object.values(miniGameWeights).reduce((sum: number, w: number) => sum + w, 0);
     who5Raw += miniGameTotal;
@@ -101,21 +136,69 @@ export const Summary = () => {
       const tone = w === 1 ? 'positive' : w === -1 ? 'avoidance' : 'neutral';
       return `${label}: ${tone}`;
     });
-    setMiniGameSummary(mgParts.length > 0 ? mgParts.join(', ') : 'no mini-games recorded');
+    const mgSummaryStr = mgParts.length > 0 ? mgParts.join(', ') : 'no mini-games recorded';
+    setMiniGameSummary(mgSummaryStr);
 
     const rtValues = Object.values(reactionTimes);
+    let rtSummaryStr = 'response timing not recorded';
     if (rtValues.length > 0) {
       const sorted = [...rtValues].sort((a, b) => a - b);
       const mid = Math.floor(sorted.length / 2);
       const median = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
       const fast = rtValues.filter((t) => t < median * 0.6).length;
       const slow = rtValues.filter((t) => t > median * 1.6).length;
-      setReactionTimeSummary(
-        `median ${(median / 1000).toFixed(1)}s; ${fast} unusually fast response${fast !== 1 ? 's' : ''}, ${slow} unusually slow`,
-      );
-    } else {
-      setReactionTimeSummary('response timing not recorded');
+      rtSummaryStr =
+        `median ${(median / 1000).toFixed(1)}s; ${fast} unusually fast response${fast !== 1 ? 's' : ''}, ${slow} unusually slow`;
     }
+    setReactionTimeSummary(rtSummaryStr);
+
+    // ── Build the in-game snapshot (choices + mini-games + timing + NLP) ──
+    const choiceVals = Object.values(choices);
+    const positiveChoices = choiceVals.filter((w) => w >= 1).length;
+    const choiceScore = choiceVals.length > 0 ? (positiveChoices / choiceVals.length) * 100 : 50;
+
+    const mgCount = Object.keys(miniGameWeights).length;
+    const mgTotal = Object.values(miniGameWeights).reduce((sum: number, w: number) => sum + w, 0);
+    const miniScore = mgCount > 0 ? clampUnit((mgTotal + mgCount) / (mgCount * 2)) * 100 : 50;
+
+    // Timing score rewards a consistent, unhurried-but-not-slow response pace; many
+    // unusually slow responses (hesitation) pull it down.
+    let timingScore = 50;
+    if (rtValues.length > 0) {
+      const sorted = [...rtValues].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      const median = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+      const normalCount = rtValues.filter((t) => t >= median * 0.6 && t <= median * 1.6).length;
+      timingScore = (normalCount / rtValues.length) * 100;
+    }
+
+    const sentimentVals = Object.values(freeTextAnswers)
+      .map((t) => scoreText(t))
+      .filter((s): s is number => s !== null);
+    const avgSentiment =
+      sentimentVals.length > 0 ? sentimentVals.reduce((sum, s) => sum + s, 0) / sentimentVals.length : 0;
+    const nlpScore = sentimentVals.length > 0 ? clampUnit((avgSentiment + 1) / 2) * 100 : 50;
+
+    const overall = Math.round(
+      choiceScore * 0.35 + miniScore * 0.15 + timingScore * 0.25 + nlpScore * 0.25,
+    );
+
+    const nlpTone =
+      avgSentiment > 0.2
+        ? 'positive tone in your written reflections'
+        : avgSentiment < -0.2
+          ? 'a heavier tone in your written reflections'
+          : 'a neutral tone in your written reflections';
+
+    setSnapshot({
+      overall,
+      parts: [
+        { label: 'Choices', value: Math.round(choiceScore), note: cs || 'no choices recorded' },
+        { label: 'Mini-games', value: Math.round(miniScore), note: mgSummaryStr },
+        { label: 'Timing', value: Math.round(timingScore), note: rtSummaryStr },
+        { label: 'NLP', value: Math.round(nlpScore), note: nlpTone },
+      ],
+    });
 
     if (!sessionId) {
       setStage('summary');
@@ -166,9 +249,46 @@ export const Summary = () => {
   };
 
   if (stage === 'loading_q1' || stage === 'loading_q2' || stage === 'loading_summary') {
+    const loadingLabel =
+      stage === 'loading_summary' ? 'Writing your personal reflection…' : 'Reflecting on your choices…';
+
     return (
-      <div style={{ textAlign: 'center', padding: '3rem' }}>
-        <h2>Reflecting on your choices…</h2>
+      <div className="groundTruthWrapper">
+        {/* Floating background particles */}
+        <div className="warning-particles" aria-hidden="true">
+          {PARTICLES.map((p) => (
+            <div
+              key={p.id}
+              className="warning-particle"
+              style={{
+                left: `${p.x}%`,
+                top: `${p.y}%`,
+                width: `${p.size}px`,
+                height: `${p.size}px`,
+                background: p.color,
+                animationDuration: `${p.duration}s`,
+                animationDelay: `${-p.delay}s`,
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="scene-card qre-card" style={{ marginTop: '1.5rem' }}>
+          {/* Eyebrow */}
+          <span className="qre-eyebrow">Reflection</span>
+
+          {/* Title */}
+          <h1 className="qre-title">Thinking Things Through</h1>
+
+          {/* Decorative rule */}
+          <div className="qre-rule" />
+
+          {/* Loading state */}
+          <div className="summary-loading" role="status">
+            <span className="summary-spinner" aria-hidden="true" />
+            <p>{loadingLabel}</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -180,87 +300,156 @@ export const Summary = () => {
     const onSubmit = stage === 'q1' ? handleSubmitA1 : handleSubmitA2;
 
     return (
-      <div style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
-        <h2>A Couple of Questions</h2>
-        <p style={{ fontSize: '1.1rem', marginBottom: '1.5rem' }}>{question}</p>
-        <textarea
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          style={{ width: '100%', height: '100px', padding: '10px' }}
-          placeholder="Type your thoughts here... (optional)"
-        />
-        <button
-          onClick={onSubmit}
-          style={{
-            padding: '10px 20px',
-            marginTop: '15px',
-            cursor: 'pointer',
-            backgroundColor: '#333',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-          }}
-        >
-          Continue
-        </button>
+      <div className="groundTruthWrapper">
+        {/* Floating background particles */}
+        <div className="warning-particles" aria-hidden="true">
+          {PARTICLES.map((p) => (
+            <div
+              key={p.id}
+              className="warning-particle"
+              style={{
+                left: `${p.x}%`,
+                top: `${p.y}%`,
+                width: `${p.size}px`,
+                height: `${p.size}px`,
+                background: p.color,
+                animationDuration: `${p.duration}s`,
+                animationDelay: `${-p.delay}s`,
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="scene-card qre-card" style={{ marginTop: '1.5rem' }}>
+          {/* Eyebrow */}
+          <span className="qre-eyebrow">A Couple of Questions</span>
+
+          {/* Title */}
+          <h1 className="qre-title">Your Thoughts</h1>
+
+          {/* Decorative rule */}
+          <div className="qre-rule" />
+
+          {/* Scrollable content */}
+          <div className="qre-content scrollable-content">
+            <h2 className="qre-section-title" style={{ marginBottom: '0.75rem' }}>
+              {question}
+            </h2>
+            <p className="qre-section-text" style={{ marginBottom: '1rem' }}>
+              There are no right or wrong answers - share whatever feels natural.
+            </p>
+
+            <textarea
+              className="summary-textarea"
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter = submit (continue); Shift + Enter = new line
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (answer.trim()) onSubmit();
+                }
+              }}
+              rows={6}
+              placeholder="Type your thoughts here..."
+              aria-label="Your answer"
+              required
+            />
+
+            <button
+              className="qre-button"
+              style={{ marginTop: '1.25rem' }}
+              onClick={onSubmit}
+              disabled={!answer.trim()}
+            >
+              {answer.trim() ? 'Continue' : 'Please share a few words to continue'}
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
-      <h2>Your Personalized Reflection</h2>
-      <div
-        style={{
-          backgroundColor: '#e3f2fd',
-          padding: '20px',
-          borderRadius: '8px',
-          marginBottom: '30px',
-          border: '2px solid #2196f3',
-        }}
-      >
-        <p style={{ color: '#000000', fontSize: '1.1rem', lineHeight: '1.6', margin: '0' }}>
-          {summaryText}
-        </p>
+    <div className="groundTruthWrapper">
+      {/* Floating background particles */}
+      <div className="warning-particles" aria-hidden="true">
+        {PARTICLES.map((p) => (
+          <div
+            key={p.id}
+            className="warning-particle"
+            style={{
+              left: `${p.x}%`,
+              top: `${p.y}%`,
+              width: `${p.size}px`,
+              height: `${p.size}px`,
+              background: p.color,
+              animationDuration: `${p.duration}s`,
+              animationDelay: `${-p.delay}s`,
+            }}
+          />
+        ))}
       </div>
 
-      <div
-        style={{
-          backgroundColor: '#f5f5f5',
-          padding: '20px',
-          borderRadius: '8px',
-          marginBottom: '30px',
-          border: '2px solid #999',
-        }}
-      >
-        <h3 style={{ margin: '0 0 10px 0', color: '#000' }}>Game-Predicted Well-being Scores</h3>
-        <div style={{ display: 'flex', gap: '2rem' }}>
-          <p style={{ color: '#000', margin: 0 }}>
-            <strong>WHO-5:</strong> {Math.round(who5Predicted)}/100
-          </p>
-          <p style={{ color: '#000', margin: 0 }}>
-            <strong>SWEMWBS:</strong> {Math.round(swemwbsPredicted)}/35
-          </p>
+      <div className="scene-card qre-card" style={{ marginTop: '1.5rem' }}>
+        {/* Eyebrow */}
+        <span className="qre-eyebrow">Your Reflection</span>
+
+        {/* Title */}
+        <h1 className="qre-title">A Personal Snapshot</h1>
+
+        {/* Decorative rule */}
+        <div className="qre-rule" />
+
+        {/* Scrollable content */}
+        <div className="qre-content scrollable-content">
+          {/* Personalised Gemini summary */}
+          <div className="completion-summary-box">
+            <p className="completion-summary-text">{summaryText}</p>
+          </div>
+
+          {/* In-game snapshot score (choices + mini-games + timing + NLP) */}
+          {snapshot && (
+            <div className="completion-scores-section">
+              <h2 className="qre-section-title" style={{ marginBottom: '0.75rem' }}>
+                Your In-Game Snapshot
+              </h2>
+              <p className="qre-section-text" style={{ marginBottom: '1rem' }}>
+                A combined view of everything that happened during your session — your story
+                choices, mini-games, response timing, and the tone of your written reflections.
+              </p>
+
+              <div className="completion-score-card snapshot-overall-card">
+                <span className="completion-score-label">In-Game Wellbeing Score</span>
+                <span className="completion-score-value snapshot-overall-value">
+                  {snapshot.overall}
+                  <span className="completion-score-max">/100</span>
+                </span>
+                <span className="completion-score-descriptor">
+                  {snapshotDescriptor(snapshot.overall)}
+                </span>
+              </div>
+
+              <div className="completion-score-grid">
+                {snapshot.parts.map((part) => (
+                  <div key={part.label} className="completion-score-card">
+                    <span className="completion-score-label">{part.label}</span>
+                    <span className="completion-score-value snapshot-part-value">
+                      {part.value}
+                      <span className="completion-score-max">/100</span>
+                    </span>
+                    <span className="snapshot-part-note">{part.note}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button className="qre-button" onClick={handleContinue}>
+            Continue
+          </button>
         </div>
-        <p style={{ color: '#555', fontSize: '0.85rem', marginTop: '10px', marginBottom: 0 }}>
-          Estimated from your in-game choices and mini-game responses — you'll also answer a direct
-          questionnaire next, and both will be shown together at the end.
-        </p>
       </div>
-
-      <button
-        onClick={handleContinue}
-        style={{
-          padding: '10px 20px',
-          cursor: 'pointer',
-          backgroundColor: '#333',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '4px',
-        }}
-      >
-        Continue
-      </button>
     </div>
   );
 };

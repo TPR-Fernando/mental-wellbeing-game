@@ -122,6 +122,24 @@ export async function saveGroundTruth(sessionId: string, data: GroundTruthData):
   );
 }
 
+// Captures the participant's preference for the game-based vs. standard-questionnaire approach,
+// collected right after the ground-truth questionnaire (and after the session is marked completed,
+// so the existing Firestore update rule permits it).
+export async function savePreference(sessionId: string, answer: string): Promise<void> {
+  const ref = doc(db, 'sessions', sessionId);
+  await setDoc(
+    ref,
+    {
+      preference: {
+        question: 'Would you prefer playing a game like this over filling out a standard questionnaire?',
+        answer,
+        submittedAt: serverTimestamp(),
+      },
+    },
+    { merge: true },
+  );
+}
+
 // Links an existing session to an authenticated user after Google sign-in.
 export async function linkSessionToUser(sessionId: string, userId: string): Promise<void> {
   const ref = doc(db, 'sessions', sessionId);

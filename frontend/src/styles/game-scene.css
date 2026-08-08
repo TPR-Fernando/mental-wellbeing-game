@@ -457,6 +457,7 @@
   justify-content: flex-start;
   margin-top: 1rem;
   align-items: center;
+  overflow: visible;
 }
 .minigame-word-row {
   position: relative;
@@ -485,7 +486,7 @@
 .minigame-word-btn::before {
   content: '';
   position: absolute;
-  inset: -18px;
+  inset: -30px;
   border-radius: inherit;
   background: var(--acbg, rgba(0, 0, 0, 0.93));
   filter: blur(26px);
