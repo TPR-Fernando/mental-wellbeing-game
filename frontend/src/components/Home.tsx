@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
+import { prepareAmbientAudio } from '../services/ambientMusic';
+import { preloadScenarioImages } from '../utils/preload';
 
 // ── Web Audio helpers ────────────────────────────────────────────────
 export function getAudioCtxInstance(ref: React.MutableRefObject<AudioContext | null>) {
@@ -123,6 +125,13 @@ export const Home = () => {
     };
   }, []);
 
+  // ── Warm the next scenes' backdrops while on this page ───────────
+  // Consent already fetched scenes 1-4; this page tops up 5-9 so the
+  // first mini-game stretch is already cached when play begins.
+  useEffect(() => {
+    preloadScenarioImages([5, 6, 7, 8, 9]);
+  }, []);
+
   // ── Scene counter count-up ───────────────────────────────────────
   useEffect(() => {
     let raf: number;
@@ -175,6 +184,10 @@ export const Home = () => {
     const ctx = getAudioCtxInstance(audioCtxRef);
     playStartSound(ctx);
 
+    // Prepare the ambient soundtrack on this same gesture (browsers allow audio
+    // after a user interaction). Merely unlocks it — music stays silent until a
+    // game scene actually appears (only scenes have music).
+    prepareAmbientAudio();
     // Sparkle burst from button centre
     const rect = e.currentTarget.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;

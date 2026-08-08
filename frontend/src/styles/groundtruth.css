@@ -607,126 +607,126 @@
 @media (prefers-color-scheme: dark) {
 
   .qre-card {
-    background: rgba(30, 22, 55, 0.62);
-    border-color: rgba(120, 100, 200, 0.26);
+    background: rgba(47, 30, 78, 0.66);
+    border-color: rgba(148, 118, 224, 0.3);
   }
 
   .qre-eyebrow {
-    background: rgba(140, 110, 255, 0.14);
-    border-color: rgba(140, 110, 255, 0.26);
-    color: rgba(200, 180, 255, 0.82);
+    background: rgba(140, 110, 255, 0.16);
+    border-color: rgba(140, 110, 255, 0.3);
+    color: rgba(214, 196, 255, 0.88);
   }
 
   .qre-title {
-    color: #e8e0ff;
+    color: #f2ecff;
   }
 
   .qre-section-title {
-    color: #d6caff;
+    color: #e2d6ff;
   }
 
   .qre-section-text {
-    color: #a090c8;
+    color: #b5a6d0;
   }
 
   .qre-question-display {
-    background: rgba(30, 22, 55, 0.6);
-    border-color: rgba(120, 100, 200, 0.2);
+    background: rgba(47, 30, 78, 0.62);
+    border-color: rgba(148, 118, 224, 0.24);
   }
 
   .qre-question-title {
-    color: #d6caff;
+    color: #e2d6ff;
   }
 
   .qre-answer-option {
-    background: rgba(40, 28, 80, 0.4);
+    background: rgba(56, 38, 96, 0.42);
   }
 
   .qre-answer-option:hover {
-    background: rgba(124, 92, 252, 0.15);
+    background: rgba(124, 92, 252, 0.18);
   }
 
   .qre-answer-option.selected {
-    background: rgba(124, 92, 252, 0.22);
-    border-color: rgba(124, 92, 252, 0.45);
+    background: rgba(124, 92, 252, 0.26);
+    border-color: rgba(124, 92, 252, 0.5);
   }
 
   .qre-answer-option span {
-    color: #c8baff;
+    color: #d4c6f0;
   }
 
   /* Completion page dark overrides */
   .completion-summary-box {
-    background: rgba(124, 92, 252, 0.1);
-    border-color: rgba(124, 92, 252, 0.25);
+    background: rgba(124, 92, 252, 0.12);
+    border-color: rgba(124, 92, 252, 0.28);
   }
 
   .completion-summary-text {
-    color: #d6caff;
+    color: #e2d6ff;
   }
 
   .completion-score-card {
-    background: rgba(30, 22, 55, 0.6);
-    border-color: rgba(120, 100, 200, 0.2);
+    background: rgba(47, 30, 78, 0.62);
+    border-color: rgba(148, 118, 224, 0.24);
   }
 
   .completion-thankyou {
-    color: #a090c8;
+    color: #b5a6d0;
   }
 
   /* Summary / Reflection page dark overrides */
   .summary-loading {
-    color: #a090c8;
+    color: #b5a6d0;
   }
 
   .summary-textarea {
-    color: #e8e0ff;
-    background: rgba(30, 22, 55, 0.6);
-    border-color: rgba(120, 100, 200, 0.32);
+    color: #f2ecff;
+    background: rgba(47, 30, 78, 0.62);
+    border-color: rgba(148, 118, 224, 0.36);
   }
 
   .summary-textarea::placeholder {
-    color: rgba(200, 180, 255, 0.45);
+    color: rgba(214, 196, 255, 0.5);
   }
 
   .summary-textarea:focus {
-    background: rgba(40, 28, 80, 0.7);
-    border-color: rgba(124, 92, 252, 0.55);
+    background: rgba(56, 38, 96, 0.72);
+    border-color: rgba(124, 92, 252, 0.6);
   }
 
   .snapshot-overall-card {
-    background: linear-gradient(180deg, rgba(124, 92, 252, 0.18), rgba(30, 22, 55, 0.6));
-    border-color: rgba(124, 92, 252, 0.4);
+    background: linear-gradient(180deg, rgba(124, 92, 252, 0.2), rgba(47, 30, 78, 0.62));
+    border-color: rgba(124, 92, 252, 0.45);
   }
 
   .snapshot-part-note {
-    color: #a090c8;
+    color: #b5a6d0;
   }
 
   /* Preference step dark overrides */
   .preference-question {
-    color: #d6caff;
+    color: #e2d6ff;
   }
 
   .preference-option {
-    background: rgba(40, 28, 80, 0.4);
-    border-color: rgba(120, 100, 200, 0.22);
-    color: #c8baff;
+    background: rgba(56, 38, 96, 0.42);
+    border-color: rgba(148, 118, 224, 0.26);
+    color: #d4c6f0;
   }
 
   .preference-option:hover {
-    background: rgba(124, 92, 252, 0.15);
+    background: rgba(124, 92, 252, 0.18);
   }
 
   .preference-option.selected {
-    background: rgba(124, 92, 252, 0.22);
-    border-color: rgba(124, 92, 252, 0.45);
-    color: #e8e0ff;
+    background: rgba(124, 92, 252, 0.26);
+    border-color: rgba(124, 92, 252, 0.5);
+    color: #f2ecff;
   }
 
   .completion-disclaimer {
-    color: #9080b8;
-    border-left-color: rgba(124, 92, 252, 0.4);
-    background: rgba(124, 92, 252, 0.06);
+    color: #a79ac6;
+    border-left-color: rgba(124, 92, 252, 0.45);
+    background: rgba(124, 92, 252, 0.08);
   }
 }

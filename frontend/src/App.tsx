@@ -10,6 +10,7 @@ import { GroundTruth } from './components/GroundTruth';
 import { Completion } from './components/Completion';
 import { GoogleLogin } from './components/GoogleLogin';
 import { LiquidTrail } from './components/LiquidTrail';
+import { MusicToggle } from './components/MusicToggle';
 import { SceneThemeProvider, useSceneTheme } from './context/SceneThemeContext';
 
 function App() {
@@ -48,6 +49,7 @@ function AppContent() {
   return (
     <>
       <LiquidTrail accentColor={rgbAccent} />
+      <MusicToggle />
       <Routes>
         <Route path="/" element={<Consent />} />
         <Route element={<RequireConsent />}>

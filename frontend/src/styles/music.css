@@ -1,0 +1,65 @@
+/* ── Floating background-music toggle ───────────────────────────────── */
+.music-toggle {
+  position: fixed;
+  right: 1.1rem;
+  bottom: 1.1rem;
+  z-index: 9999;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1.5px solid rgba(124, 92, 252, 0.4);
+  border-radius: 50px;
+  background: rgba(30, 22, 55, 0.66);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: #e2d6ff;
+  font-family: inherit;
+  font-size: 1.02rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
+}
+
+.music-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.38);
+}
+
+.music-toggle:active {
+  transform: scale(0.95);
+}
+
+/* Playing state — vivid purple gradient, echoing the game's CTA buttons */
+.music-toggle--on {
+  background: linear-gradient(135deg, rgba(124, 92, 252, 0.88), rgba(91, 143, 255, 0.88));
+  border-color: transparent;
+  color: #fff;
+}
+
+.music-toggle-glyph {
+  display: inline-block;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.music-toggle--on .music-toggle-glyph {
+  animation: music-note-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes music-note-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.25); }
+}
+
+.music-toggle-note {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  opacity: 0.72;
+}
+
+.music-toggle--na .music-toggle-glyph {
+  opacity: 0.55;
+}

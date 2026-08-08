@@ -1,106 +1,109 @@
 /* ── Dark-mode overrides ──────────────────────────────────────────── */
+/* Palette harmonised with the narrative game: warm purples / indigo /
+   earth tones rather than a cold deep-space gradient. The game scene
+   photos sit on top of these without ever showing the "space" look. */
 @media (prefers-color-scheme: dark) {
   body {
-    background: linear-gradient(135deg, #1e1530 0%, #141b2e 40%, #0f1e1a 70%, #1e1b0f 100%);
+    background: linear-gradient(135deg, #2d1b47 0%, #202a49 40%, #1d3a2e 70%, #332417 100%);
     background-attachment: fixed;
   }
   .scene-card,
   .wordchoice-card,
   .consent-card {
-    background: rgba(30, 22, 55, 0.62);
-    border-color: rgba(120, 100, 200, 0.26);
+    background: rgba(47, 30, 78, 0.66);
+    border-color: rgba(148, 118, 224, 0.3);
   }
   .scene-text-box {
-    background: rgba(20, 15, 45, 0.42);
-    border-color: rgba(120, 100, 200, 0.2);
+    background: rgba(40, 26, 70, 0.5);
+    border-color: rgba(148, 118, 224, 0.24);
   }
-  .scene-text-box p { color: #c8baff; }
-  .scene-title         { color: #e2d6ff !important; }
+  .scene-text-box p { color: #d4c6f0; }
+  .scene-title         { color: #f0e8ff !important; }
   .scene-label,
   .choices-heading,
   .wordchoice-eyebrow,
-  .consent-title { color: rgba(200, 180, 255, 0.95); }
+  .consent-title { color: rgba(214, 196, 255, 0.96); }
   .choice-bubble {
-    background: rgba(40, 28, 80, 0.48);
-    border-color: rgba(120, 100, 200, 0.3);
-    color: #d6caff;
+    background: rgba(56, 38, 96, 0.52);
+    border-color: rgba(148, 118, 224, 0.34);
+    color: #e2d6ff;
   }
   .choice-bubble:hover {
-    background: rgba(60, 44, 120, 0.62);
+    background: rgba(72, 50, 128, 0.64);
   }
   .free-text-area {
-    background: rgba(30, 22, 60, 0.52);
-    color: #d6caff;
-    border-color: rgba(120, 100, 200, 0.3);
+    background: rgba(44, 28, 78, 0.56);
+    color: #e2d6ff;
+    border-color: rgba(148, 118, 224, 0.34);
   }
-  .free-text-area::placeholder { color: rgba(180,160,255,0.32); }
-  .free-text-label   { color: #d6caff; }
-  .free-text-optional { color: rgba(180,160,255,0.45); }
-  .wordchoice-prompt { color: #c8baff; }
+  .free-text-area::placeholder { color: rgba(190,170,230,0.38); }
+  .free-text-label   { color: #e2d6ff; }
+  .free-text-optional { color: rgba(190,170,230,0.5); }
+  .wordchoice-prompt { color: #d4c6f0; }
   .wordchoice-btn {
-    background: rgba(40, 28, 80, 0.48);
-    border-color: rgba(120, 100, 200, 0.3);
-    color: #d6caff;
+    background: rgba(56, 38, 96, 0.52);
+    border-color: rgba(148, 118, 224, 0.34);
+    color: #e2d6ff;
   }
   .wordchoice-btn:hover:not(:disabled) {
-    background: rgba(60, 44, 120, 0.62);
+    background: rgba(72, 50, 128, 0.64);
   }
   /* Home page */
   .home-card {
-    background: rgba(25, 18, 50, 0.62);
-    border-color: rgba(120, 100, 200, 0.28);
+    background: rgba(43, 27, 72, 0.66);
+    border-color: rgba(148, 118, 224, 0.32);
   }
-  .home-title    { color: #e8e0ff; }
-  .home-tagline  { color: #a898d0; }
-  .home-description { color: #9688c0; }
+  .home-title    { color: #f2ecff; }
+  .home-tagline  { color: #bcabd8; }
+  .home-description { color: #a79ac6; }
   .home-eyebrow,
   .home-chip {
-    background: rgba(140, 110, 255, 0.14);
-    border-color: rgba(140, 110, 255, 0.26);
-    color: rgba(200, 180, 255, 0.82);
+    background: rgba(140, 110, 255, 0.16);
+    border-color: rgba(140, 110, 255, 0.3);
+    color: rgba(214, 196, 255, 0.88);
   }
   /* Consent page – dark mode */
   .consent-liquid-1 {
-    background: radial-gradient(ellipse at 40% 50%, #6d28d9, #4c1d95);
-    opacity: 0.35;
+    background: radial-gradient(ellipse at 40% 50%, #8b5cf6, #5b21b6);
+    opacity: 0.34;
   }
   .consent-liquid-2 {
-    background: radial-gradient(ellipse at 60% 45%, #1e3a5f, #312e81);
-    opacity: 0.35;
+    background: radial-gradient(ellipse at 60% 45%, #4f6fb3, #4338ca);
+    opacity: 0.34;
   }
   .consent-liquid-3 {
-    background: radial-gradient(ellipse at 50% 50%, #5b21b6, #4338ca);
-    opacity: 0.22;
+    background: radial-gradient(ellipse at 50% 50%, #7c5cfc, #6d28d9);
+    opacity: 0.24;
   }
   .consent-eyebrow {
-    color: rgba(180, 155, 255, 0.9);
-    background: rgba(124, 92, 252, 0.18);
-    border-color: rgba(124, 92, 252, 0.35);
+    color: rgba(214, 196, 255, 0.92);
+    background: rgba(124, 92, 252, 0.2);
+    border-color: rgba(124, 92, 252, 0.4);
   }
-  .consent-subtitle { color: rgba(190, 175, 230, 0.75); }
+  .consent-subtitle { color: rgba(190, 175, 230, 0.8); }
   .consent-divider {
-    background: linear-gradient(90deg, rgba(124, 92, 252, 0.4), rgba(91, 143, 255, 0.18), transparent);
+    background: linear-gradient(90deg, rgba(124, 92, 252, 0.45), rgba(91, 143, 255, 0.2), transparent);
   }
   .consent-info-block {
-    background: rgba(40, 28, 80, 0.45);
-    border-color: rgba(120, 100, 200, 0.28);
+    background: rgba(49, 32, 88, 0.5);
+    border-color: rgba(148, 118, 224, 0.32);
   }
-  .consent-info-label { color: rgba(180, 155, 255, 0.9); }
-  .consent-info-text  { color: #c8baff; }
+  .consent-info-label { color: rgba(214, 196, 255, 0.92); }
+  .consent-info-text  { color: #d4c6f0; }
   .consent-agreement-section {
-    background: rgba(40, 28, 80, 0.3);
-    border-color: rgba(120, 100, 200, 0.28);
+    background: rgba(49, 32, 88, 0.34);
+    border-color: rgba(148, 118, 224, 0.32);
   }
-  .consent-declaration-heading { color: rgba(180, 155, 255, 0.9); }
-  .consent-paragraph  { color: #c8baff; }
+  .consent-declaration-heading { color: rgba(214, 196, 255, 0.92); }
+  .consent-paragraph  { color: #d4c6f0; }
   .consent-checkbox-container {
-    background: rgba(30, 22, 60, 0.4);
-    border-color: rgba(120, 100, 200, 0.3);
+    background: rgba(44, 28, 78, 0.42);
+    border-color: rgba(148, 118, 224, 0.34);
   }
-  .consent-checkbox-text { color: #d6caff; }
+  .consent-checkbox-text { color: #e2d6ff; }
   .consent-error {
-    background: rgba(255, 235, 235, 0.1);
-    border-left-color: #ff6b6b;
-    color: #ff8a8a;
+    background: rgba(255, 235, 235, 0.12);
+    border-left-color: #ff7a7a;
+    color: #ff9a9a;
   }
 }

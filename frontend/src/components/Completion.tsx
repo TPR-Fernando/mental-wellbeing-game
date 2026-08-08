@@ -196,7 +196,7 @@ export const Completion = () => {
 
         {/* Thank-you note */}
         <p className="completion-thankyou">
-          That's everything — thank you for taking the time to play through today's story and share
+          That's everything - thank you for taking the time to play through today's story and share
           your reflections with us.
         </p>
 

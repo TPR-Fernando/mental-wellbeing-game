@@ -112,7 +112,7 @@ export const scenarios: Scene[] = [
       { id: "B", text: "Mention it, help sort a plan, a bit of discussion.", weight: 1, layout: { x: 56, y: 19, width: 29, height: 78 } },
       { id: "C", text: "Quietly take on more yourself. Avoid the conversation.", weight: 0, layout: { x: 26, y: 28, width: 29, height: 82 } },
       { id: "D", text: "Frustrated, but say little. Pull back, focus on your part.", weight: -1, layout: { x: 60, y: 38, width: 31, height: 84 } },
-      { id: "E", text: "Shut down completely. Do the bare minimum and get through it.", weight: -2, layout: { x: 36, y: 47, width: 31, height: 82 } }
+      { id: "E", text: "Shut down completely. Do the bare minimum and get through it.", weight: -2, layout: { x: 36, y: 45, width: 31, height: 82 } }
     ],
     freeTextPrompt: "How do you usually handle situations like this?"
   },
@@ -152,7 +152,7 @@ export const scenarios: Scene[] = [
       { id: "B", text: "Settle in after a short warm-up, get a decent amount done.", weight: 1, layout: { x: 64, y: 19, width: 31, height: 82 } },
       { id: "C", text: "Browse notes a bit before starting properly.", weight: 0, layout: { x: 20, y: 28, width: 27, height: 80 } },
       { id: "D", text: "Feel heavy, unfocused. Takes a while to actually start.", weight: -1, layout: { x: 62, y: 38, width: 30, height: 82 } },
-      { id: "E", text: "Completely drained. Barely get anything done all afternoon.", weight: -2, layout: { x: 36, y: 47, width: 31, height: 82 } }
+      { id: "E", text: "Completely drained. Barely get anything done all afternoon.", weight: -2, layout: { x: 36, y: 45, width: 31, height: 82 } }
     ]
   },
   {
@@ -167,7 +167,7 @@ export const scenarios: Scene[] = [
       { id: "D", text: "Confusion builds. Drift to something else without meaning to.", weight: -1, layout: { x: 60, y: 38, width: 31, height: 82 } },
       { id: "E", text: "Head fogs up completely. Close the tab, give up for the day.", weight: -2, layout: { x: 34, y: 47, width: 31, height: 82 } }
     ],
-    freeTextPrompt: "When you're stuck on something academic, what usually goes through your mind?"
+    freeTextPrompt: "When a piece of coursework feels overwhelming, what do you notice happening in your mind?"
   },
   {
     id: 11,

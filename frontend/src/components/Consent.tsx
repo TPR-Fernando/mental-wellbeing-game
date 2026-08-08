@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
 import { createSession } from '../services/firestoreSession';
 import { getDeviceType } from '../utils/device';
+import { prepareAmbientAudio, preloadAmbientMusic } from '../services/ambientMusic';
+import { preloadScenarioImages } from '../utils/preload';
 
 // This is the app's actual entry route ("/"). Nothing about the study or the narrative game
 // is reachable before this screen — see COPILOT_BUILD_GUIDE.md Rule 5 and Section 8.1.
@@ -13,6 +15,15 @@ export const Consent = () => {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // While the participant reads the consent text, warm the caches so the flow
+  // feels instant later: the first scenes' backdrops (the biggest files) and
+  // every music track (busy/night are multi-MB and previously downloaded only
+  // when first needed mid-session, which made the music seem to "never change").
+  useEffect(() => {
+    preloadAmbientMusic();
+    preloadScenarioImages([1, 2, 3, 4]);
+  }, []);
 
   // Side effects (navigation) belong in an effect, not directly in the render body.
   useEffect(() => {
@@ -26,6 +37,10 @@ export const Consent = () => {
   const handleAgree = async () => {
     setSubmitting(true);
     setError(null);
+    // This is the first real user gesture in the flow — unlock the ambient
+    // soundtrack here so the music is already flowing by the time the opening
+    // pages (Home / Important Notice / Warning) and the game itself appear.
+    prepareAmbientAudio();
     try {
       const sessionId = await createSession(getDeviceType());
       setSession(sessionId);

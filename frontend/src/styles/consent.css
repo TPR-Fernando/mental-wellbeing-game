@@ -2,6 +2,12 @@
 .consent-wrapper {
   width: 100%;
   min-height: 100dvh;
+  height: 100dvh;          /* Pin to the viewport — no browser-level scrollbar */
+  max-width: 860px;        /* Widen the consent page (game-wrapper defaults to 660px) */
+  /* Total vertical wrapper padding (1.5rem top + 3rem bottom from .game-wrapper)
+     minus the card's own max-height — used so the card always fits inside the
+     wrapper's padding box and only .consent-content scrolls internally. */
+  --consent-vpad: 4.5rem;
   position: relative;
   isolation: isolate;
   box-sizing: border-box;
@@ -63,12 +69,20 @@
 
 .consent-card {
   padding: 2.5rem 2.5rem 2.75rem;
-  max-width: 680px;
+  max-width: 800px;        /* Widen the card a bit (was 680px) */
   border-radius: 20px 5px 20px 5px;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  max-height: calc(100dvh - 3rem);
+  /* Must fit inside the wrapper's padding box (100dvh minus its vertical
+     padding) or the page itself scrolls instead of .consent-content. */
+  max-height: calc(100dvh - var(--consent-vpad, 4.5rem));
+}
+
+/* Keep the fixed card regions from shrinking; only .consent-content scrolls */
+.consent-card > .consent-header,
+.consent-card > .consent-divider {
+  flex-shrink: 0;
 }
 
 /* Header */
@@ -271,5 +285,21 @@
   }
   .consent-card {
     padding: 1.75rem 1.25rem 2rem;
+  }
+}
+
+/* Match --consent-vpad to the wrapper padding set by responsive.css so the
+   card always fits the viewport and never causes a page-level scrollbar. */
+@media (max-width: 600px) {
+  .consent-wrapper {
+    /* responsive.css: .game-wrapper padding 0.75rem 0.75rem 2rem */
+    --consent-vpad: 2.75rem;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .consent-wrapper {
+    /* responsive.css: .game-wrapper padding 0.5rem 1rem 1rem */
+    --consent-vpad: 1.5rem;
   }
 }

@@ -2,38 +2,19 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
 import { scenarios } from '../data/scenarios';
+import { scenarioImages } from '../data/scenarioImages';
 import { wordChoices } from '../data/wordChoices';
 import { saveSceneChoice, saveFreeText, saveMiniGame } from '../services/firestoreSession';
 import { scoreText } from '../utils/sentiment';
 import { getAudioCtxInstance } from './Home';
+import { setAmbientScene } from '../services/ambientMusic';
+import { preloadScenarioImages } from '../utils/preload';
 
 // Mini-games embedded after specific scenes — see COPILOT_BUILD_GUIDE.md Section 5.
 const MINIGAME_AFTER_SCENE: Record<number, number> = {
   6: 1,
   10: 2,
   13: 3,
-};
-
-// ── Scenario image imports ───────────────────────────────────────────
-import s1 from '../assets/scenarios/s1.png';
-import s2 from '../assets/scenarios/s2.png';
-import s3 from '../assets/scenarios/s3.jpg';
-import s4 from '../assets/scenarios/s4.png';
-import s5 from '../assets/scenarios/s5.png';
-import s6 from '../assets/scenarios/s6.png';
-import s7 from '../assets/scenarios/s7.png';
-import s8 from '../assets/scenarios/s8.png';
-import s9 from '../assets/scenarios/s9.png';
-import s10 from '../assets/scenarios/s10.png';
-import s11 from '../assets/scenarios/s11.png';
-import s12 from '../assets/scenarios/s12.png';
-import s13 from '../assets/scenarios/s13.png';
-import s14 from '../assets/scenarios/s14.png';
-import s15 from '../assets/scenarios/s15.png';
-
-const scenarioImages: Record<number, string> = {
-  1: s1, 2: s2, 3: s3, 4: s4, 5: s5, 6: s6, 7: s7,
-  8: s8, 9: s9, 10: s10, 11: s11, 12: s12, 13: s13, 14: s14, 15: s15,
 };
 
 // ── Per-scene visual themes ──────────────────────────────────────────
@@ -224,6 +205,10 @@ export const Game = () => {
     setEntering(true);
     lastTickSecRef.current = -1;
 
+    // Warm the cache for the next scenes while the participant reads this one,
+    // so scene transitions are instant instead of waiting on a 1.3-2.4MB file.
+    preloadScenarioImages([currentScene + 1, currentScene + 2]);
+
     const sceneEntryAudio = getPlayableAudioCtx();
     if (sceneEntryAudio) playSceneEntry(sceneEntryAudio, currentScene);
     const fadeTimer = setTimeout(() => setEntering(false), 420);
@@ -275,6 +260,15 @@ export const Game = () => {
       nextScene();
     }
   }, [miniGameIndex, nextScene]);
+
+  // ── Scene audio ────────────────────────────────────────────────────
+  // Continuous ambient mix: each scene crossfades to its mood's track (only
+  // re-tuning when the mood type changes, staying put otherwise). Leaving the
+  // game eases to the gentle default so the soundtrack never cuts out.
+  useEffect(() => {
+    setAmbientScene(currentScene);
+    return () => setAmbientScene(null);
+  }, [currentScene]);
 
   const handleAnswerHover = useCallback(() => {
     if (answeredRef.current) return;
@@ -498,6 +492,13 @@ export const Game = () => {
             className="free-text-area"
             value={freeText}
             onChange={(e) => setFreeText(e.target.value)}
+            onKeyDown={(e) => {
+              // Enter = continue (submit/skip, since it's optional); Shift + Enter = new line
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleNextScene();
+              }
+            }}
             placeholder="Type your thoughts here…"
             style={{ borderColor: theme.accent, color: theme.textColor } as React.CSSProperties}
           />

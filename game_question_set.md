@@ -209,7 +209,7 @@
 
 ### Scene 10 — Assignment Block
 **Mapped to:** SWEMWBS S5 *(thinking clearly)*  
-**Free-text prompt:** Yes — *"When you're stuck on something academic, what usually goes through your mind?"*
+**Free-text prompt:** Yes — *"When a piece of coursework feels overwhelming, what do you notice happening in your mind?"*
 
 > You hit a part of the assignment you don't get. You've read it twice and it's still not clicking.
 
@@ -316,7 +316,7 @@ Unlike the other 14 scenes, this one runs on a visible countdown instead of a pl
 | 1 | After choice | *"Describe how mornings have been feeling for you lately."* |
 | 3 | After choice | *"What's been on your mind lately about the future?"* |
 | 6 | After choice | *"How do you usually handle situations like this?"* |
-| 10 | After choice | *"When you're stuck on something academic, what usually goes through your mind?"* |
+| 10 | After choice | *"When a piece of coursework feels overwhelming, what do you notice happening in your mind?"* |
 | 13 | After choice | *"Is there anything that's been weighing on you lately that you haven't been able to put down?"* |
 
 > All free-text is optional. The game continues regardless of whether the player types anything.

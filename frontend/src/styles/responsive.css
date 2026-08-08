@@ -91,6 +91,7 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
   }
   .answers-grid {
@@ -101,6 +102,7 @@
     min-height: 0;
     flex-shrink: 0;
     padding: 0 0.75rem 1rem;
+    box-sizing: border-box;
   }
   .answer-cloud {
     position: relative !important;
@@ -109,6 +111,7 @@
     width: 80% !important;
     max-width: none !important;
     min-height: 60px;
+    min-width: 0;
   }
   /* Alternate left/right offset for a visual scatter feel */
   .answer-cloud:nth-child(odd) {
@@ -136,6 +139,52 @@
 
 /* ── Landscape (mobile rotated, short viewport) ──────────────────── */
 @media (orientation: landscape) and (max-height: 560px) {
+  /* Landscape phones also get the stacked answer layout (the desktop scatter
+     layout overlaps and clips the clouds on short landscape viewports). */
+  .answers-area {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  .answers-grid {
+    display: flex !important;
+    flex-direction: column;
+    gap: 10px;
+    height: auto !important;
+    min-height: 0;
+    flex-shrink: 0;
+    padding: 0 0.75rem 1rem;
+    box-sizing: border-box;
+  }
+  .answer-cloud {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    width: 80% !important;
+    max-width: none !important;
+    min-height: 52px;
+    min-width: 0;
+  }
+  .answer-cloud:nth-child(odd) {
+    align-self: flex-start;
+    margin-left: 2%;
+  }
+  .answer-cloud:nth-child(even) {
+    align-self: flex-end;
+    margin-right: 2%;
+  }
+  .answers-count-2 {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+  }
+  .answers-count-2 .answer-cloud {
+    flex: 1 1 44% !important;
+    width: auto !important;
+    max-width: 48% !important;
+    align-self: auto;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
   /* Blobs: shrink so they don't dominate the short screen */
   .game-blob-1 { width: 300px; height: 300px; top: -100px; left: -100px; }
   .game-blob-2 { width: 260px; height: 260px; bottom: 180px; right: -80px; }

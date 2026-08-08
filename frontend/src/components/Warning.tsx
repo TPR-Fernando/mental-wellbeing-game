@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAudioCtxInstance, playHoverSound, playStartSound } from '../components/Home'; // Reuse audio functions from Home
+import { prepareAmbientAudio } from '../services/ambientMusic';
+import { preloadScenarioImages } from '../utils/preload';
 
 // ── Particles ────────────────────────────────────────────────────────
 const PARTICLE_COLORS = ['#7c5cfc', '#5b8fff', '#34d399', '#f59e0b', '#f472b6'];
@@ -49,6 +51,13 @@ export const Warning = () => {
       window.removeEventListener('resize', updateBottomState);
     };
   }, []);
+
+  // Warm the final stretch while the participant reads the notice —
+  // scenes 10-15 include the busy/night moods whose backdrops (and music)
+  // previously only downloaded when first needed.
+  useEffect(() => {
+    preloadScenarioImages([10, 11, 12, 13, 14, 15]);
+  }, []);
   
   const handleAccept = () => {
     if (!hasReachedBottom) {
@@ -57,6 +66,10 @@ export const Warning = () => {
 
     const ctx = getAudioCtxInstance(audioCtxRef);
     playStartSound(ctx);
+    
+    // Unlock scene audio on this user gesture (scenes are the only place music
+    // plays; this merely prepares it so Scene 1's alarm can start).
+    prepareAmbientAudio();
     
     setTimeout(() => {
       navigate('/game');
