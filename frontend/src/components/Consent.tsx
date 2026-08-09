@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
 import { createSession } from '../services/firestoreSession';
 import { getDeviceType } from '../utils/device';
-import { prepareAmbientAudio, preloadAmbientMusic } from '../services/ambientMusic';
+import { preloadAmbientMusic } from '../services/ambientMusic';
 import { preloadScenarioImages } from '../utils/preload';
 
 // This is the app's actual entry route ("/"). Nothing about the study or the narrative game
@@ -37,10 +37,6 @@ export const Consent = () => {
   const handleAgree = async () => {
     setSubmitting(true);
     setError(null);
-    // This is the first real user gesture in the flow — unlock the ambient
-    // soundtrack here so the music is already flowing by the time the opening
-    // pages (Home / Important Notice / Warning) and the game itself appear.
-    prepareAmbientAudio();
     try {
       const sessionId = await createSession(getDeviceType());
       setSession(sessionId);

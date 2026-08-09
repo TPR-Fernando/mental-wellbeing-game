@@ -101,7 +101,9 @@
     height: auto !important;
     min-height: 0;
     flex-shrink: 0;
-    padding: 0 0.75rem 1rem;
+    /* Leave room for the cloud's blurred background above the first choice.
+       Without this, the question bubble overlaps the top of that background. */
+    padding: 24px 0.75rem 1rem;
     box-sizing: border-box;
   }
   .answer-cloud {
@@ -152,7 +154,8 @@
     height: auto !important;
     min-height: 0;
     flex-shrink: 0;
-    padding: 0 0.75rem 1rem;
+    /* Keep the blurred top edge of the first cloud clear of the question. */
+    padding: 24px 0.75rem 1rem;
     box-sizing: border-box;
   }
   .answer-cloud {

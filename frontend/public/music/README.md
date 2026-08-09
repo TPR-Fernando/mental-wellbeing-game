@@ -22,14 +22,15 @@ are served from `/music/...` and loop at a gentle volume. A crossfading mixer ke
 - **Crossfades, not cuts.** When a scene's mood changes (e.g. morning → busy)
   the outgoing track gently ducks down while the new one fades in — no abrupt
   stop. The fade takes about 2.4 seconds.
-- **Interstitial pages are not silent.** The beginning (Consent → Important
-  Notice / Warning) and the end (Summary, Questionnaire, Completion) ease to
-  the default `morning` track at a clearly audible level, so the music flows
-  continuously from the very first click through to the final screen.
+- **Interstitial pages are not silent after the soundtrack starts.** The
+  Important Notice and the end (Summary, Questionnaire, Completion) ease to
+  the default `morning` track at a clearly audible level. The Consent and Home
+  pages remain silent until the participant clicks **I Understand, Continue**.
 - The track **only changes when the scene type changes**. Consecutive scenes of
   the same type reuse the same looping file — nothing restarts.
 - The floating ♪ toggle fades the music to silence / back (instead of an abrupt
-  pause). Music starts after the first click on Home or Warning.
+  pause). Music is on by default and starts when the participant clicks
+  **I Understand, Continue** on the Important Notice page.
 - **Consistent volume.** The source files differ in loudness, so each track is
   steered to a uniform mix level: `morning.mp3` (the loudest) is cut the most,
   `busy` and `night` are eased down a little, and `alarm.mp3` is left unchanged.

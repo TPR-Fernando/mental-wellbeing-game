@@ -21,7 +21,7 @@
 // is reduced the most, busy & night a little, and alarm is unchanged.
 // Scene 1 layers morning under the alarm. If a scene's file is missing it
 // falls back to morning.mp3. Browsers block autoplay, so audio is
-// unlocked on a user gesture (Home "Begin Your Day" / Warning "Continue").
+// unlocked on a user gesture (Warning "I Understand, Continue").
 
 type TrackKey = 'alarm' | 'morning' | 'busy' | 'night';
 const TRACK_KEYS: TrackKey[] = ['alarm', 'morning', 'busy', 'night'];
@@ -85,9 +85,11 @@ let lastTickAt = 0;
 
 function loadPreference(): boolean {
   try {
-    return localStorage.getItem(STORAGE_KEY) === 'on';
+    // Music is enabled for new participants. An explicit "off" preference is
+    // still respected on subsequent visits.
+    return localStorage.getItem(STORAGE_KEY) !== 'off';
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -267,8 +269,8 @@ export function preloadAmbientMusic(): void {
 }
 
 /**
- * Call inside a real user gesture (Home "Begin Your Day" or Warning
- * "Continue"). Unlocks the audio engine, sets music on by default if the
+ * Call inside the real user gesture on Warning ("I Understand, Continue").
+ * Unlocks the audio engine, sets music on by default if the
  * participant hasn't chosen, and starts the continuous ambient mix (the
  * gentle default on these early pages, the scene's track once a scene loads).
  */

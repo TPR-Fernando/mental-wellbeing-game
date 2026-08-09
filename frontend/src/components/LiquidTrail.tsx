@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 
 const BALL_COUNT = 16;
+const INACTIVITY_TIMEOUT = 3000;
+const FADE_DURATION = '0.6s';
 
 interface LiquidTrailProps {
   /** Accent color for the cursor bobble balls */
@@ -52,13 +54,26 @@ export function LiquidTrail({ accentColor = 'rgba(147, 95, 255, 0.92)' }: Liquid
     colorRef.current = accentColor;
 
     const mouse = { x: -1000, y: -1000 };
+    let inactivityTimer: ReturnType<typeof setTimeout>;
+
+    const scheduleFade = () => {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        container.style.opacity = '0';
+      }, INACTIVITY_TIMEOUT);
+    };
 
     const onMouseMove = (e: MouseEvent) => {
       mouse.x = e.clientX;
       mouse.y = e.clientY;
+      container.style.opacity = '1';
+      scheduleFade();
     };
 
+    container.style.opacity = '1';
+    container.style.transition = `opacity ${FADE_DURATION} ease`;
     window.addEventListener('mousemove', onMouseMove, { passive: true });
+    scheduleFade();
 
     let raf: number;
 
@@ -86,6 +101,7 @@ export function LiquidTrail({ accentColor = 'rgba(147, 95, 255, 0.92)' }: Liquid
 
     return () => {
       cancelAnimationFrame(raf);
+      clearTimeout(inactivityTimer);
       window.removeEventListener('mousemove', onMouseMove);
       balls.forEach(b => b.el.remove());
       ballsRef.current = [];

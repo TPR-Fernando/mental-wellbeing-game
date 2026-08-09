@@ -67,8 +67,7 @@ export const Warning = () => {
     const ctx = getAudioCtxInstance(audioCtxRef);
     playStartSound(ctx);
     
-    // Unlock scene audio on this user gesture (scenes are the only place music
-    // plays; this merely prepares it so Scene 1's alarm can start).
+    // This is the user gesture that unlocks and starts the ambient soundtrack.
     prepareAmbientAudio();
     
     setTimeout(() => {

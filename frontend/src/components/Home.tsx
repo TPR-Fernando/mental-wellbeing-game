@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
-import { prepareAmbientAudio } from '../services/ambientMusic';
 import { preloadScenarioImages } from '../utils/preload';
 
 // ── Web Audio helpers ────────────────────────────────────────────────
@@ -184,10 +183,6 @@ export const Home = () => {
     const ctx = getAudioCtxInstance(audioCtxRef);
     playStartSound(ctx);
 
-    // Prepare the ambient soundtrack on this same gesture (browsers allow audio
-    // after a user interaction). Merely unlocks it — music stays silent until a
-    // game scene actually appears (only scenes have music).
-    prepareAmbientAudio();
     // Sparkle burst from button centre
     const rect = e.currentTarget.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
