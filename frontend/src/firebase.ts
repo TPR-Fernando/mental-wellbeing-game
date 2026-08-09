@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
-import { getAuth } from 'firebase/auth';
+import { getAuth, browserSessionPersistence, setPersistence, signOut as firebaseSignOut } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -24,4 +24,14 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const functions = getFunctions(app);
 export const auth = getAuth(app);
+
+// The Google login must never be cached between visits — every participant must sign in again on
+// each visit (one account = one assessment). Session persistence keeps the auth state alive only
+// for the current browser tab and clears it the moment the tab is closed. Switching persistence
+// also signs out any login previously cached under the old default `local` persistence.
+setPersistence(auth, browserSessionPersistence).catch((err) => {
+  console.error('Failed to set session-only auth persistence:', err);
+});
+
+export const signOut = firebaseSignOut;
 

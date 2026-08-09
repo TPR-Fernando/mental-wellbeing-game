@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebase';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { auth, signOut } from '../firebase';
 import { useGameStore } from '../store/gameStore';
-import { linkSessionToUser } from '../services/firestoreSession';
+import { checkUserAlreadyCompleted, linkSessionToUser } from '../services/firestoreSession';
 import { getAudioCtxInstance, playHoverSound, playStartSound } from './Home';
 
 // ── Particles (same pattern as Warning / Home) ───────────────────────
@@ -28,19 +28,10 @@ export const GoogleLogin = () => {
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // If already signed in, auto-forward to /summary
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUserId(user.uid);
-        if (sessionId) {
-          void linkSessionToUser(sessionId, user.uid).catch(() => undefined);
-        }
-        navigate('/summary', { replace: true });
-      }
-    });
-    return unsub;
-  }, [navigate, sessionId, setUserId]);
+  // Note: there is deliberately no onAuthStateChanged auto-forward. The Google login is never
+  // cached across visits (session-only persistence + sign-out on the final screen), so every
+  // participant must explicitly sign in each time. One account may complete the assessment only
+  // once — after signing in we check whether this account already did.
 
   const handleSignIn = async () => {
     setError(null);
@@ -53,6 +44,28 @@ export const GoogleLogin = () => {
       const result = await signInWithPopup(auth, provider);
       const uid = result.user.uid;
       setUserId(uid);
+
+      // Block accounts that have already completed the assessment — a second attempt must not
+      // create a duplicate record. Queries Firestore directly; rules only allow reads when
+      // the session's userId matches the caller's auth.uid.
+      let alreadyCompleted = false;
+      try {
+        alreadyCompleted = await checkUserAlreadyCompleted(uid);
+      } catch (checkErr) {
+        console.error('Duplicate-attempt check failed:', checkErr);
+        await signOut(auth);
+        setError("We couldn't verify your account right now. Please try again.");
+        setSigningIn(false);
+        return;
+      }
+
+      if (alreadyCompleted) {
+        // Deliberately generic — never references "this Google account".
+        await signOut(auth);
+        setError('You have already taken this assessment.');
+        setSigningIn(false);
+        return;
+      }
 
       if (sessionId) {
         await linkSessionToUser(sessionId, uid);

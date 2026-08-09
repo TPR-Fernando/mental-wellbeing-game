@@ -30,10 +30,12 @@ service cloud.firestore {
                           && request.resource.data.userId == request.auth.uid)
                     );
 
-      // No client reads at all: no listing, no querying, no fetching a session back after writing
-      // it (including your own). Only Cloud Functions via the Admin SDK (which bypasses these rules)
-      // can read session data.
-      allow read: if false;
+      // Authenticated users may read only their own sessions — used for the
+      // "already completed this assessment" duplicate check at sign-in time.
+      // A `where("userId", "==", uid)` query ensures all returned documents
+      // satisfy this condition, so `list` is covered as well as `get`.
+      allow read: if request.auth != null
+                   && resource.data.userId == request.auth.uid;
       allow delete: if false;
     }
 

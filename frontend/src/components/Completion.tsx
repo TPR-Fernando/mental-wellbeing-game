@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
+import { auth, signOut } from '../firebase';
 
 // ── Particles (same pattern as Home / Warning / GroundTruth) ────────
 const PARTICLE_COLORS = ['#7c5cfc', '#5b8fff', '#34d399', '#f59e0b', '#f472b6'];
@@ -42,6 +43,13 @@ export const Completion = () => {
   const wellbeingSummary = useGameStore((state) => state.wellbeingSummary);
   const groundTruthScores = useGameStore((state) => state.groundTruthScores);
   const predictedScores = useGameStore((state) => state.predictedScores);
+
+  // The Google login must never be cached between visits (one account = one assessment). Sign out
+  // as soon as the participant reaches the final screen so the auth state cannot linger for the
+  // next person using this browser.
+  useEffect(() => {
+    void signOut(auth).catch(() => undefined);
+  }, []);
 
   return (
     <div className="groundTruthWrapper completion-wrapper">

@@ -1,4 +1,4 @@
-import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { DeviceType } from '../utils/device';
 
@@ -144,4 +144,16 @@ export async function savePreference(sessionId: string, answer: string): Promise
 export async function linkSessionToUser(sessionId: string, userId: string): Promise<void> {
   const ref = doc(db, 'sessions', sessionId);
   await setDoc(ref, { userId }, { merge: true });
+}
+
+// One account may take the assessment only once. Checks Firestore directly — the
+// firestore.rules `allow read` now permits authenticated users to read only their
+// own sessions (matched by userId == auth.uid). A single-field equality filter on
+// userId is auto-indexed, so no composite index is required; the completed status
+// is checked in memory on the few docs returned per user.
+export async function checkUserAlreadyCompleted(userId: string): Promise<boolean> {
+  const q = query(collection(db, 'sessions'), where('userId', '==', userId));
+  const snap = await getDocs(q);
+  // Typically 0-1 docs per user; iterate in-memory to avoid a composite index.
+  return snap.docs.some((d) => d.data().status === 'completed');
 }

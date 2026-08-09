@@ -139,16 +139,21 @@ export const Summary = () => {
     const mgSummaryStr = mgParts.length > 0 ? mgParts.join(', ') : 'no mini-games recorded';
     setMiniGameSummary(mgSummaryStr);
 
-    const rtValues = Object.values(reactionTimes);
-    let rtSummaryStr = 'response timing not recorded';
-    if (rtValues.length > 0) {
-      const sorted = [...rtValues].sort((a, b) => a - b);
-      const mid = Math.floor(sorted.length / 2);
-      const median = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
-      const fast = rtValues.filter((t) => t < median * 0.6).length;
-      const slow = rtValues.filter((t) => t > median * 1.6).length;
-      rtSummaryStr =
-        `median ${(median / 1000).toFixed(1)}s; ${fast} unusually fast response${fast !== 1 ? 's' : ''}, ${slow} unusually slow`;
+    // Decision time is only meaningful for the timed question (Scene 11), where the
+    // participant must choose between 2 options or let the countdown run out as a hidden
+    // 3rd outcome. Regular scenes' times mostly reflect reading speed, so they are excluded
+    // from the AI summary and snapshot (see game_question_set.md Scene 11 for rationale).
+    const timedScene = scenarios.find((s) => s.id === 11);
+    const timedLimitMs = timedScene?.timedChoice?.limitMs ?? null;
+    const decisionTimeMs =
+      timedScene && reactionTimes[timedScene.id] !== undefined ? reactionTimes[timedScene.id] : undefined;
+
+    let rtSummaryStr = 'decision timing not recorded';
+    if (decisionTimeMs !== undefined && decisionTimeMs !== null) {
+      const timedOut = timedLimitMs !== null && decisionTimeMs >= timedLimitMs;
+      rtSummaryStr = timedOut
+        ? `timed out at ${((timedLimitMs ?? decisionTimeMs) / 1000).toFixed(1)}s without making a decision`
+        : `decided in ${(decisionTimeMs / 1000).toFixed(1)}s on the timed decision`;
     }
     setReactionTimeSummary(rtSummaryStr);
 
@@ -161,15 +166,19 @@ export const Summary = () => {
     const mgTotal = Object.values(miniGameWeights).reduce((sum: number, w: number) => sum + w, 0);
     const miniScore = mgCount > 0 ? clampUnit((mgTotal + mgCount) / (mgCount * 2)) * 100 : 50;
 
-    // Timing score rewards a consistent, unhurried-but-not-slow response pace; many
-    // unusually slow responses (hesitation) pull it down.
+    // Timing score reflects decisiveness on the only timed question (Scene 11): the faster
+    // a decision under the countdown, the stronger the behavioural signal; failing to decide
+    // (timeout) is the strongest avoidance signal, so it scores lowest. Regular scenes are
+    // excluded because their times mainly reflect reading speed, not hesitation.
     let timingScore = 50;
-    if (rtValues.length > 0) {
-      const sorted = [...rtValues].sort((a, b) => a - b);
-      const mid = Math.floor(sorted.length / 2);
-      const median = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
-      const normalCount = rtValues.filter((t) => t >= median * 0.6 && t <= median * 1.6).length;
-      timingScore = (normalCount / rtValues.length) * 100;
+    if (decisionTimeMs !== undefined && decisionTimeMs !== null) {
+      const timedOut = timedLimitMs !== null && decisionTimeMs >= timedLimitMs;
+      if (timedOut) {
+        timingScore = 10;
+      } else {
+        const fraction = timedLimitMs !== null && timedLimitMs > 0 ? decisionTimeMs / timedLimitMs : 0.5;
+        timingScore = fraction <= 0.3 ? 90 : fraction <= 0.9 ? 60 : 30;
+      }
     }
 
     const sentimentVals = Object.values(freeTextAnswers)
