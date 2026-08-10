@@ -116,7 +116,7 @@
 
 .qre-section-text {
   font-size: 0.88rem;
-  color: #6b5f8a;
+  color: #524570;
   margin-bottom: 0.5rem;
   line-height: 1.55;
 }
@@ -139,6 +139,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
   border: 1.5px solid rgba(109, 90, 200, 0.12);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-width: 0; /* keep long question text inside the box */
 }
 
 .qre-question-display:has(.selected) {
@@ -151,12 +152,10 @@
 .qre-question-title {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #3d2b6e;
+  color: #2b2149;
   margin-bottom: 0.85rem;
   padding-left: 0.25rem;
   line-height: 1.45;
-  -webkit-text-stroke: 10px #1a1832;
-  paint-order: stroke fill;
 }
 
 /* ── Answer options ──────────────────────────────────────────────── */
@@ -248,6 +247,7 @@
 .qre-answer-option span:last-child {
   font-size: 0.9rem;
   line-height: 1.45;
+  color: #2b2149;
 }
 
 .qre-answer-option.selected span:last-child {
@@ -345,6 +345,11 @@
   border-color: rgba(124, 92, 252, 0.5);
   color: #3d2b6e;
   font-weight: 600;
+}
+.preference-option:disabled {
+  opacity: 0.65;
+  cursor: progress;
+  transform: none;
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -691,6 +696,10 @@
   }
 
   .qre-answer-option span {
+    color: #d4c6f0;
+  }
+
+  .qre-answer-option span:last-child {
     color: #d4c6f0;
   }
 

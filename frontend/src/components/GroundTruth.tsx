@@ -114,17 +114,23 @@ export const GroundTruth = () => {
     }
   };
 
-  const handlePreferenceSelect = (value: string) => {
+  const handlePreferenceSelect = async (value: string) => {
+    if (savingPreference) return; // Prevent double-submission from rapid taps
     setPreferenceAnswer(value);
     const ctx = getAudioCtxInstance(audioCtxRef);
     playSelectSound(ctx);
-  };
 
-  const handlePreferenceSubmit = async () => {
-    if (!preferenceAnswer || !sessionId) return;
+    // Selecting an option immediately saves the answer and moves on to the
+    // completion page — no separate Continue button needed.
+    if (!sessionId) {
+      navigate('/completion');
+      return;
+    }
+
     setSavingPreference(true);
+    setError(null);
     try {
-      await savePreference(sessionId, preferenceAnswer);
+      await savePreference(sessionId, value);
     } catch (err) {
       console.error('Failed to save preference:', err);
       setError("We couldn't save your feedback just now, but you can still continue.");
@@ -191,8 +197,15 @@ export const GroundTruth = () => {
           <div className="qre-section">
             <h2 className="qre-section-title">Well-Being (WHO-5)</h2>
             {WHO5_ITEMS.map((item, idx) => (
-              <fieldset key={idx} className="qre-question-display" style={{ marginBottom: '0.75rem' }}>
-                <legend className="qre-question-title">{item}</legend>
+              <fieldset
+                key={idx}
+                className="qre-question-display"
+                style={{ marginBottom: '0.75rem' }}
+                aria-labelledby={`who5-question-${idx}`}
+              >
+                <p id={`who5-question-${idx}`} className="qre-question-title">
+                  {item}
+                </p>
                 <div className="qre-answers-area">
                   {WHO5_SCALE.map((label, scaleIdx) => (
                     <label
@@ -220,8 +233,15 @@ export const GroundTruth = () => {
           <div className="qre-section">
             <h2 className="qre-section-title">Well-Being (SWEMWBS)</h2>
             {SWEMWBS_ITEMS.map((item, idx) => (
-              <fieldset key={idx} className="qre-question-display" style={{ marginBottom: '0.75rem' }}>
-                <legend className="qre-question-title">{item}</legend>
+              <fieldset
+                key={idx}
+                className="qre-question-display"
+                style={{ marginBottom: '0.75rem' }}
+                aria-labelledby={`swemwbs-question-${idx}`}
+              >
+                <p id={`swemwbs-question-${idx}`} className="qre-question-title">
+                  {item}
+                </p>
                 <div className="qre-answers-area">
                   {SWEMWBS_SCALE.map((label, scaleIdx) => (
                     <label
@@ -276,11 +296,15 @@ export const GroundTruth = () => {
                     type="button"
                     className={`preference-option${preferenceAnswer === opt.value ? ' selected' : ''}`}
                     onClick={() => handlePreferenceSelect(opt.value)}
+                    disabled={savingPreference}
                   >
                     {opt.label}
                   </button>
                 ))}
               </div>
+              <p className="qre-section-text" style={{ marginTop: '0.75rem' }}>
+                {savingPreference ? 'Saving your answer…' : 'Tap an option to continue automatically.'}
+              </p>
             </div>
 
             {error && (
@@ -288,15 +312,6 @@ export const GroundTruth = () => {
                 {error}
               </p>
             )}
-
-            <button
-              onClick={handlePreferenceSubmit}
-              disabled={!preferenceAnswer || savingPreference}
-              className="qre-button"
-              onMouseEnter={handleButtonHover}
-            >
-              {savingPreference ? 'Saving…' : 'Continue'}
-            </button>
           </div>
         )}
       </div>
