@@ -400,6 +400,28 @@
     overflow-y: auto;
     padding-right: 0;
   }
+
+  /* Pin the continue bar to the bottom of the card on mobile and give it a
+     full-width reach with the card's own side padding kept clear. */
+  .summary-continue-bar {
+    position: sticky;
+    bottom: 0;
+    margin: 0 -1rem -1rem;
+    padding: 1rem 1rem 0.9rem;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.92) 40%,
+      rgba(255, 255, 255, 0.97) 100%
+    );
+    z-index: 5;
+  }
+
+  .summary-continue-bar .qre-button {
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -468,7 +490,14 @@
 .completion-score-max {
   font-size: 1rem;
   font-weight: 600;
-  opacity: 0.6;
+  opacity: 0.7;
+  /* Give "/100" / "/35" their own solid fill instead of inheriting the
+     parent's -webkit-text-fill-color: transparent. The parent's gradient
+     is clipped to its text via background-clip:text, but on mobile browsers
+     the clipped background often does not cover this smaller nested span,
+     which made the denominator invisible (only the big number showed). */
+  color: #6b5f8a;
+  -webkit-text-fill-color: #6b5f8a;
 }
 
 .completion-score-descriptor {
@@ -583,6 +612,16 @@
   min-height: 2.2em;
 }
 
+/* Floating "Continue to Questionnaire" bar for the Summary/results stage.
+   On desktop it sits at the end of the scrollable content; on mobile it
+   becomes a sticky bar pinned to the bottom so the next step is always
+   visible without scrolling. */
+.summary-continue-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1rem;
+}
+
 /* Reduced motion: keep the spinner calm */
 @media (prefers-reduced-motion: reduce) {
   .summary-spinner {
@@ -670,6 +709,11 @@
     border-color: rgba(148, 118, 224, 0.24);
   }
 
+  .completion-score-max {
+    color: #b5a6d0;
+    -webkit-text-fill-color: #b5a6d0;
+  }
+
   .completion-thankyou {
     color: #b5a6d0;
   }
@@ -701,6 +745,15 @@
 
   .snapshot-part-note {
     color: #b5a6d0;
+  }
+
+  .summary-continue-bar {
+    background: linear-gradient(
+      180deg,
+      rgba(47, 30, 78, 0) 0%,
+      rgba(47, 30, 78, 0.9) 40%,
+      rgba(47, 30, 78, 0.97) 100%
+    );
   }
 
   /* Preference step dark overrides */

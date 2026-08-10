@@ -454,9 +454,11 @@ export const Summary = () => {
             </div>
           )}
 
-          <button className="qre-button" onClick={handleContinue}>
-            Continue
-          </button>
+          <div className="summary-continue-bar">
+            <button className="qre-button" onClick={handleContinue}>
+              Continue
+            </button>
+          </div>
         </div>
       </div>
     </div>
