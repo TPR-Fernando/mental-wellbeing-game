@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
+import { collection, doc, getDocs, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { DeviceType } from '../utils/device';
 
@@ -31,15 +31,14 @@ export async function saveSceneChoice(
   choiceData: SceneChoiceData,
 ): Promise<void> {
   const ref = doc(db, 'sessions', sessionId);
-  await setDoc(
-    ref,
-    {
-      choices: { [`scene_${String(sceneNumber).padStart(2, '0')}`]: choiceData },
-      currentScene: sceneNumber,
-      status: 'in_progress',
-    },
-    { merge: true },
-  );
+  // Use a dotted field path so Firestore updates only this scene. Merging a nested
+  // `choices` object replaces the previously stored scene entries, which loses all
+  // but the most recent score and reaction time.
+  await updateDoc(ref, {
+    [`choices.scene_${String(sceneNumber).padStart(2, '0')}`]: choiceData,
+    currentScene: sceneNumber,
+    status: 'in_progress',
+  });
 }
 
 export async function saveFreeText(
@@ -49,15 +48,9 @@ export async function saveFreeText(
   sentimentScore: number | null,
 ): Promise<void> {
   const ref = doc(db, 'sessions', sessionId);
-  await setDoc(
-    ref,
-    {
-      freeTexts: {
-        [`scene_${String(sceneNumber).padStart(2, '0')}`]: { text, sentimentScore },
-      },
-    },
-    { merge: true },
-  );
+  await updateDoc(ref, {
+    [`freeTexts.scene_${String(sceneNumber).padStart(2, '0')}`]: { text, sentimentScore },
+  });
 }
 
 export interface MiniGameResult {
@@ -73,13 +66,9 @@ export async function saveMiniGame(
   result: MiniGameResult,
 ): Promise<void> {
   const ref = doc(db, 'sessions', sessionId);
-  await setDoc(
-    ref,
-    {
-      minigames: { [`mg_${String(miniGameIndex).padStart(2, '0')}`]: result },
-    },
-    { merge: true },
-  );
+  await updateDoc(ref, {
+    [`minigames.mg_${String(miniGameIndex).padStart(2, '0')}`]: result,
+  });
 }
 
 export interface PostGameInterview {

@@ -170,6 +170,7 @@ export const Game = () => {
   const [entering, setEntering] = useState(true);
 
   const sceneStartRef = useRef<number>(performance.now());
+  const miniGameStartRef = useRef<number>(performance.now());
   const answeredRef = useRef(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const lastTickSecRef = useRef<number>(-1);
@@ -239,7 +240,11 @@ export const Game = () => {
         recordReactionTime(currentScene, limitMs);
         recordChoice(currentScene, timeoutWeight);
         if (sessionId) {
-          void saveSceneChoice(sessionId, currentScene, { optionId: 'timeout', weight: timeoutWeight, timeMs: limitMs });
+          void saveSceneChoice(sessionId, currentScene, {
+            optionId: 'timeout',
+            weight: timeoutWeight,
+            timeMs: limitMs,
+          }).catch((err) => console.error('Failed to save timed scene choice:', err));
         }
         goToNextScene();
       }
@@ -323,12 +328,13 @@ export const Game = () => {
                   // Save the choice and complete mini-game
                   recordMiniGameWeight(miniGameIndex!, weight);
                   if (sessionId) {
+                    const decisionTimeMs = performance.now() - miniGameStartRef.current;
                     void saveMiniGame(sessionId, miniGameIndex!, {
                       word: word.text,
                       weight,
-                      decisionTimeMs: 0,
+                      decisionTimeMs,
                       sceneContext: miniGameChoiceSet.sceneContext,
-                    });
+                    }).catch((err) => console.error('Failed to save mini-game result:', err));
                   }
 
                   // Complete the mini-game
@@ -350,7 +356,10 @@ export const Game = () => {
   const goToNextScene = () => {
     if (currentScene >= scenarios.length) { navigate('/login'); return; }
     const mg = MINIGAME_AFTER_SCENE[currentScene];
-    if (mg) setMiniGameIndex(mg); else nextScene();
+    if (mg) {
+      miniGameStartRef.current = performance.now();
+      setMiniGameIndex(mg);
+    } else nextScene();
   };
 
   const handleChoice = (optionId: string, weight: number) => {
@@ -362,7 +371,11 @@ export const Game = () => {
     recordReactionTime(currentScene, elapsed);
     recordChoice(currentScene, weight);
     setSelectedChoice(weight);
-    if (sessionId) void saveSceneChoice(sessionId, currentScene, { optionId, weight, timeMs: elapsed });
+    if (sessionId) {
+      void saveSceneChoice(sessionId, currentScene, { optionId, weight, timeMs: elapsed }).catch((err) =>
+        console.error('Failed to save scene choice:', err),
+      );
+    }
     if (scene.freeTextPrompt) {
       setShowPrompt(true);
     } else {
@@ -373,7 +386,11 @@ export const Game = () => {
   const handleNextScene = () => {
     if (showPrompt && freeText.trim().length > 0) {
       recordText(currentScene, freeText);
-      if (sessionId) void saveFreeText(sessionId, currentScene, freeText, scoreText(freeText));
+      if (sessionId) {
+        void saveFreeText(sessionId, currentScene, freeText, scoreText(freeText)).catch((err) =>
+          console.error('Failed to save scene reflection:', err),
+        );
+      }
     }
     goToNextScene();
   };

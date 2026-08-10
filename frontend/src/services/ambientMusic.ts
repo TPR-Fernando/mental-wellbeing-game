@@ -1,44 +1,37 @@
-// ── Continuous ambient audio ─────────────────────────────────────────
-// A crossfading mixer keeps a smooth, uninterrupted soundtrack flowing
-// across the whole participant flow (Home → Warning → Scenes → Summary →
-// Questionnaire → Completion). The audio is never hard-stopped or
-// restarted: when a scene's mood changes we duck the outgoing track down
-// (e.g. keep morning running but reduce it) while the new mood fades in,
-// then ease back, so there is always a continuous, gentle flow.
+// ── Continuous ambient audio (iOS-safe, layered) ────────────────────────
+// Architecture: ONE continuous background track (morning.mp3 = the "main"
+// track) loops for the whole session and is NEVER paused or restarted. A
+// second element plays the "secondary" tracks (alarm / busy / night) ON TOP
+// when a scene calls for them. Each element feeds its own Web Audio GainNode,
+// so the main track can be smoothly ducked while a secondary plays and then
+// smoothly brought back up — resuming from wherever it currently is.
+//
+// Requirements this design satisfies:
+//   1. main (morning.mp3) loops for the entire session — never stopped/restarted.
+//   2. When a secondary track plays, main is smoothly faded to 0 (not paused),
+//      the secondary plays, then main fades back up once the secondary ends —
+//      picking up from its current position, not the start.
+//   3. EXCEPTION — Scene 1: main and alarm play TOGETHER at the same time,
+//      main is NOT ducked.
+//   4. Every volume change is a smooth exponential fade, never an instant cut.
+//
+// Why Web Audio gain (not el.volume): iOS ignores HTMLMediaElement.volume (it
+// always reads as 1) and ignores el.muted timing, so fades are done in the
+// audio graph with setTargetAtTime — which IS honoured on iOS. Each element
+// gets its own GainNode and they all sum into the destination, so we can duck
+// one stream while keeping another audible.
 //
 // Tracks (files provided by the researcher in frontend/public/music/):
-//   alarm.mp3  -> scene 1                      morning.mp3 -> daytime / campus scenes
-//   busy.mp3   -> social & pressure scenes      night.mp3  -> winding-down scenes
+//   morning.mp3 -> MAIN / continuous background (and simple daytime scenes)
+//   alarm.mp3   -> scene 1, layered with main (not ducked)
+//   busy.mp3    -> social & pressure scenes (6, 8, 10, 11, 12)
+//   night.mp3   -> winding-down scenes (13, 14, 15)
 //
-// Each track gets its own looping <audio> element and a fade engine
-// animates their volumes. Inside a scene its track fades up to the
-// foreground level; between pages we crossfade to a quiet default
-// (morning) so nothing ever cuts to silence. Every element keeps playing
-// contiguously — a non-foreground track is simply reduced to ZERO volume,
-// never paused or restarted, so when its mood returns it fades back up
-// from where it actually is. Track files differ in loudness, so a per-
-// track gain steers each one to a consistent level: morning (the loudest)
-// is reduced the most, busy & night a little, and alarm is unchanged.
-// Scene 1 layers morning under the alarm. If a scene's file is missing it
-// falls back to morning.mp3. Browsers block autoplay, so audio is
-// unlocked on a user gesture (Warning "I Understand, Continue").
+// The audio engine is only unlocked on a real user gesture (Warning
+// "I Understand, Continue").
 
 type TrackKey = 'alarm' | 'morning' | 'busy' | 'night';
-const TRACK_KEYS: TrackKey[] = ['alarm', 'morning', 'busy', 'night'];
-
-// Scene id -> audio type. Only the foreground track changes when the type
-// changes; consecutive same-type scenes reuse the same looping file.
-const SCENE_TRACKS: Record<number, TrackKey> = {
-  1: 'alarm',
-  2: 'morning', 3: 'morning', 4: 'morning', 5: 'morning',
-  6: 'busy',
-  7: 'morning',
-  8: 'busy',
-  9: 'morning',
-  10: 'busy', 11: 'busy',
-  12: 'busy',
-  13: 'night', 14: 'night', 15: 'night',
-};
+type SecondaryKey = 'alarm' | 'busy' | 'night'; // the 3 tracks layered over main
 
 const TRACK_FILES: Record<TrackKey, string> = {
   alarm: 'alarm.mp3',
@@ -46,42 +39,56 @@ const TRACK_FILES: Record<TrackKey, string> = {
   busy: 'busy.mp3',
   night: 'night.mp3',
 };
+const MAIN_FILE = TRACK_FILES.morning; // the permanent background track
 
-const FALLBACK_FILE = 'morning.mp3';
-const DEFAULT_AMBIENT: TrackKey = 'morning'; // gentle track used on non-scene pages
+const SECONDARY_KEYS: SecondaryKey[] = ['alarm', 'busy', 'night'];
+
+// Scene id -> which secondary track layers over main (if any). Scenes missing
+// from this map (daytime 2,3,4,5,7,9 and null / interstitial pages) play ONLY
+// the main background track.
+const SCENE_SECONDARY: Partial<Record<number, SecondaryKey>> = {
+  1: 'alarm',
+  6: 'busy', 8: 'busy', 10: 'busy', 11: 'busy', 12: 'busy',
+  13: 'night', 14: 'night', 15: 'night',
+};
 
 const STORAGE_KEY = 'ambientMusicEnabled';
 const BASE = import.meta.env.BASE_URL;
 
-// Mixer levels & timing.
-const SCENE_VOLUME = 0.3;   // alarm level (kept as-is); base for other tracks
-const IDLE_VOLUME = 0.4;    // non-scene pages (audio clearly audible, not muted)
-const CROSSFADE_MS = 2400;  // how long a mood transition takes
-const SETTLE_EPS = 0.0015;  // volume considered "arrived"
+// Mixer levels & timing. Web Audio gain is authoritative here, so base volumes
+// are comfortably audible (the old sub-0.2 figures were tuned for
+// HTMLMediaElement.volume, which iOS ignores).
+const SCENE_VOLUME = 0.5;   // main during a game scene / secondary tracks
+const IDLE_VOLUME = 0.45;   // non-scene pages (clearly audible, not muted)
+const FADE_TC = 0.7;        // seconds — smooth exponential "time constant" (all volume changes)
+const MUTE_TC = 0.12;       // seconds — fast dip before swapping the secondary src
+const SWITCH_FADE_MS = 420; // how long to duck before swapping the secondary track
 
 // Per-track loudness correction so every mood sits at a consistent level.
 // morning.mp3 is the loudest -> reduced the most; busy & night eased down a
 // little (yet still clearly audible); alarm.mp3 volume is NOT changed.
 const TRACK_GAIN: Record<TrackKey, number> = {
   alarm: 1.0,   // keep as-is
-  morning: 0.5, // loudest -> cut the most
+  morning: 0.6, // loudest -> cut the most
   busy: 0.8,    // a bit quieter, still clear
   night: 0.8,   // a bit quieter, still clear
 };
 
+// -- Graph: two elements, each with its own GainNode, summed to the output --
+let ctx: AudioContext | null = null;
+let elMain: HTMLAudioElement | null = null; // the permanent looping background
+let mainGain: GainNode | null = null;
+let elSec: HTMLAudioElement | null = null;  // the switchable secondary element
+let secGain: GainNode | null = null;
 
-// One looping element per track key, so overlapping tracks can crossfade.
-const elements = new Map<TrackKey, HTMLAudioElement>();
+let mainStarted = false;            // has the background elMain begun looping
+let currentSecondary: SecondaryKey | null = null; // which secondary is loaded on elSec
+let switchToken = 0;                // guards async secondary src-swap races
 
-// Current and target mix volume per track (0..1 applied to element.volume).
-const volumes: Record<TrackKey, number> = { alarm: 0, morning: 0, busy: 0, night: 0 };
-const targets: Record<TrackKey, number> = { alarm: 0, morning: 0, busy: 0, night: 0 };
-
-let available = true;               // whether morning is playable
+let graphFailed = false;    // no AudioContext at all -> stay silent
+let available = true;       // whether a usable track has loaded
 let enabled = loadPreference();
 let activeScene: number | null = null; // null = not inside a game scene
-let rafId: number | null = null;    // fade-engine handle
-let lastTickAt = 0;
 
 function loadPreference(): boolean {
   try {
@@ -114,85 +121,82 @@ function resolveSrc(file: string): string {
   return `${BASE}music/${file}`;
 }
 
-/** Get (creating on demand) the looping element for a track, with fallback. */
-function ensureElement(key: TrackKey): HTMLAudioElement | null {
-  const existing = elements.get(key);
-  if (existing) return existing;
-  try {
-    const el = new Audio();
-    el.loop = true;
-    el.preload = 'auto';
-    el.volume = volumes[key];
-    el.onerror = () => {
-      if (key !== 'morning') {
-        // Missing this mood's file — fall back to morning.mp3 on this element.
-        el.src = resolveSrc(FALLBACK_FILE);
-      } else {
-        available = false; // even the fallback is missing → stay silent
-      }
-    };
-    el.src = resolveSrc(TRACK_FILES[key]);
-    elements.set(key, el);
-  } catch {
-    available = false;
-  }
-  return elements.get(key) ?? null;
-}
-
-/** One rAF step: ease every volume toward its target. Tracks never pause —
- * a non-foreground track is simply ducked to zero volume and keeps looping,
- * so it can fade back up from where it actually is without ever restarting. */
-function tick(now: number): void {
-  const dt = Math.min(now - lastTickAt, 150);
-  lastTickAt = now;
-  const k = 1 - Math.exp(-dt / (CROSSFADE_MS / 3)); // smooth approach
-  let moving = false;
-
-  for (const key of TRACK_KEYS) {
-    const t = targets[key];
-    const cur = volumes[key];
-    let next: number;
-    if (Math.abs(cur - t) < SETTLE_EPS) {
-      next = t;
-    } else {
-      next = cur + (t - cur) * k;
-      moving = true;
-    }
-    volumes[key] = next;
-    const el = elements.get(key);
-    if (el) el.volume = next; // may be 0 ("reduced to zero") — still playing
-  }
-
-  rafId = moving ? requestAnimationFrame(tick) : null;
-}
-
-function ensureFadeLoop(): void {
-  if (rafId == null) {
-    lastTickAt = performance.now();
-    rafId = requestAnimationFrame(tick);
-  }
-}
-
 /**
- * Set the target mix. Every listed track eases toward its target (fade in /
- * duck / crossfade); tracks not listed keep their current target. When the
- * music is toggled off the whole mix gently fades to silence.
+ * Lazily build the two-element Web Audio graph. The continuous background
+ * element (elMain) plus a switchable secondary element (elSec), each feeding
+ * its own GainNode so they can be mixed / ducked independently. Safe to call
+ * anywhere.
  */
-function applyMix(next: Partial<Record<TrackKey, number>>): void {
-  for (const key of TRACK_KEYS) {
-    if (next[key] !== undefined) {
-      targets[key] = enabled ? next[key]! : 0;
+function ensureGraph(): boolean {
+  if (graphFailed) return false;
+  if (ctx && mainGain && elMain && secGain && elSec) return true;
+  try {
+    const AC =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AC) {
+      graphFailed = true;
+      available = false;
+      return false;
     }
+    const c = new AC();
+
+    // Continuous background (main) stream.
+    const mGain = c.createGain();
+    mGain.gain.value = 0; // start silent; fades below bring it up
+    mGain.connect(c.destination);
+    const aMain = new Audio();
+    aMain.loop = true;
+    aMain.preload = 'auto';
+    aMain.volume = 1; // el.volume no-ops on iOS — the GainNode does the work
+    aMain.muted = false;
+    const mSrc = c.createMediaElementSource(aMain);
+    mSrc.connect(mGain);
+
+    // Secondary (layered) stream — src gets swapped on demand.
+    const sGain = c.createGain();
+    sGain.gain.value = 0;
+    sGain.connect(c.destination);
+    const aSec = new Audio();
+    aSec.loop = true;
+    aSec.preload = 'auto';
+    aSec.volume = 1;
+    aSec.muted = false;
+    const sSrc = c.createMediaElementSource(aSec);
+    sSrc.connect(sGain);
+
+    ctx = c;
+    mainGain = mGain;
+    elMain = aMain;
+    secGain = sGain;
+    elSec = aSec;
+    return true;
+  } catch {
+    graphFailed = true;
+    available = false;
+    return false;
   }
-  // Make sure any foreground track is actually playing. (Elements are never
-  // paused once unlocked, so this mainly covers the very first start.)
-  for (const key of TRACK_KEYS) {
-    if (targets[key] > 0) {
-      const el = ensureElement(key);
-      if (el && el.paused) el.play().catch(() => undefined);
-    }
+}
+
+/** Un-suspend the context after a user gesture (blocks autoplay otherwise). */
+function resumeContext(): void {
+  if (ctx && ctx.state === 'suspended') {
+    ctx.resume().catch(() => undefined);
   }
-  ensureFadeLoop();
+}
+
+/** Smoothly fade the background stream's gain toward a target (never instant). */
+function fadeMain(target: number): void {
+  if (!ctx || !mainGain) return;
+  // The background always fades smoothly — both down (ducking) and back up.
+  mainGain.gain.setTargetAtTime(target, ctx.currentTime, FADE_TC);
+}
+
+/** Smoothly fade the secondary stream's gain toward a target. */
+function fadeSecondary(target: number, fast = false): void {
+  if (!ctx || !secGain) return;
+  const tc = fast ? MUTE_TC : FADE_TC;
+  secGain.gain.setTargetAtTime(target, ctx.currentTime, tc);
 }
 
 /** Effective foreground volume for a track, after its loudness correction. */
@@ -200,39 +204,158 @@ function trackVolume(key: TrackKey): number {
   return SCENE_VOLUME * TRACK_GAIN[key];
 }
 
-/** Idle (non-scene) morning level, after its loudness correction. */
-function idleMorningVolume(): number {
+/** Main (morning) level inside a game scene, after its loudness correction. */
+function mainSceneVolume(): number {
+  return SCENE_VOLUME * TRACK_GAIN.morning;
+}
+
+/** Main (morning) level on a non-scene page, after its loudness correction. */
+function mainIdleVolume(): number {
   return IDLE_VOLUME * TRACK_GAIN.morning;
 }
 
 /**
- * Point the foreground mix at a scene (its mood track at full volume) or at
- * the gentle default for non-scene pages — always crossfading, never stopping.
- * Scene 1 layers morning quietly under the (unchanged) alarm.
+ * Compute what should be audible for a given scene (null = idle page):
+ *   - mainTarget  : desired gain for the continuous background (0 while a
+ *                   busy/night secondary is ducking it out of the way).
+ *   - secondary   : which secondary track layers over main (null = none).
+ *   - secondaryTarget : desired gain for that secondary when it is playing.
+ */
+interface Mix {
+  mainTarget: number;
+  secondary: SecondaryKey | null;
+  secondaryTarget: number;
+}
+function desiredMix(sceneId: number | null): Mix {
+  if (sceneId === 1) {
+    // EXCEPTION — Scene 1: main and the alarm play TOGETHER. Main is NOT
+    // ducked; the alarm layers on top at its full corrected volume.
+    return { mainTarget: mainSceneVolume(), secondary: 'alarm', secondaryTarget: trackVolume('alarm') };
+  }
+  if (sceneId == null) {
+    // Interstitial / non-scene pages: only the gentle main background flows.
+    return { mainTarget: mainIdleVolume(), secondary: null, secondaryTarget: 0 };
+  }
+  const sec = SCENE_SECONDARY[sceneId];
+  if (!sec) {
+    // Daytime scenes (2,3,4,5,7,9): only the main background plays at scene level.
+    return { mainTarget: mainSceneVolume(), secondary: null, secondaryTarget: 0 };
+  }
+  // Busy / night scenes: the secondary layers over main, so main is smoothly
+  // ducked to silence. It fades back up automatically once the scene changes.
+  return { mainTarget: 0, secondary: sec, secondaryTarget: trackVolume(sec) };
+}
+
+
+/**
+ * Load a secondary track onto elSec, play it, then fade it up to its target
+ * gain. If a secondary file is missing the main background is brought back up
+ * so the experience is never silent.
+ */
+function playSecondary(key: SecondaryKey, target: number, token: number): void {
+  if (!elSec) return;
+  const file = TRACK_FILES[key];
+  currentSecondary = key;
+  elSec.src = resolveSrc(file);
+  elSec.load();
+
+  const start = () => {
+    if (token !== switchToken) return; // a newer route superseded this one
+    elSec!
+      .play()
+      .then(() => {
+        if (token !== switchToken) return;
+        fadeSecondary(target);
+      })
+      .catch(() => {
+        if (token !== switchToken) return;
+        currentSecondary = null;
+        if (ctx && mainGain) fadeMain(mainSceneVolume()); // fail-safe: no silence
+      });
+  };
+
+  if (elSec.readyState >= 3) {
+    start(); // metadata + enough data already buffered
+  } else {
+    elSec.addEventListener('canplay', start, { once: true });
+    elSec.addEventListener(
+      'error',
+      () => {
+        if (token !== switchToken) return;
+        currentSecondary = null;
+        if (ctx && mainGain) fadeMain(mainSceneVolume()); // fail-safe: no silence
+      },
+      { once: true }
+    );
+  }
+}
+
+/**
+ * Start the continuous background (main) once, inside a real user gesture so
+ * the browser grants playback. Afterwards it loops forever — only its gain
+ * changes. If it was paused by a mute-toggle-off, play() resumes from where it
+ * was rather than restarting.
+ */
+function ensureMainPlaying(): void {
+  if (!elMain) return;
+  if (!mainStarted) {
+    mainStarted = true;
+    elMain.src = resolveSrc(MAIN_FILE);
+    elMain.load();
+  }
+  elMain.play().catch(() => {
+    /* the gain is 0 until a route fades it up; playback starts when allowed */
+  });
+}
+
+/**
+ * Recompute the mix for the active scene and apply all fades. The background
+ * is never stopped; its level is merely retuned, and the secondary element is
+ * loaded / swapped / ducked as the scene demands.
  */
 function routeTo(sceneId: number | null): void {
   activeScene = sceneId;
+  if (!enabled || !ensureGraph()) return;
 
-  if (sceneId === 1) {
-    // Alarm up front, alarm.mp3 untouched; morning sits underneath at its idle level.
-    applyMix({
-      alarm: trackVolume('alarm'),
-      [DEFAULT_AMBIENT]: idleMorningVolume(),
-      busy: 0,
-      night: 0,
-    });
+  resumeContext();
+  ensureMainPlaying(); // guarantees the continuous loop is running (no-op after first start)
+
+  const mix = desiredMix(sceneId);
+
+  // Background always fades toward its target — ducking to 0 while a
+  // busy/night secondary plays, back up when it ends.
+  fadeMain(mix.mainTarget);
+
+  const secKey = mix.secondary;
+  if (secKey === null) {
+    // No secondary wanted -> fade it out (it keeps looping silently, ready to
+    // resume in place later).
+    fadeSecondary(0);
     return;
   }
-
-  if (sceneId != null && SCENE_TRACKS[sceneId]) {
-    const key = SCENE_TRACKS[sceneId];
-    applyMix({ alarm: 0, morning: 0, busy: 0, night: 0, [key]: trackVolume(key) });
-  } else {
-    // Continuous flow: outside the game keep a gentle default track playing
-    // so the soundtrack never cuts to silence.
-    applyMix({ alarm: 0, [DEFAULT_AMBIENT]: idleMorningVolume(), busy: 0, night: 0 });
+  if (currentSecondary === secKey) {
+    // Same secondary already loaded (possibly looped silently) -> just fade it
+    // back up from where it currently is.
+    fadeSecondary(mix.secondaryTarget);
+    return;
   }
+  if (currentSecondary === null) {
+    // First time this secondary is needed -> start it right away.
+    const token = ++switchToken;
+    playSecondary(secKey, mix.secondaryTarget, token);
+    return;
+  }
+  // Switching between two secondary tracks -> dip the current one, swap the
+  // src, then fade the new one in.
+  const token = ++switchToken;
+  fadeSecondary(0, true);
+  window.setTimeout(() => {
+    if (token !== switchToken) return; // superseded while fading out
+    playSecondary(secKey, mix.secondaryTarget, token);
+  }, SWITCH_FADE_MS);
 }
+
+
 
 /** Is the participant's music preference currently "on"? */
 export function isAmbientMusicEnabled(): boolean {
@@ -245,56 +368,58 @@ export function isAmbientMusicAvailable(): boolean {
 }
 
 /**
- * Call on every game-scene change. Pass the scene id to foreground that
- * scene's mood (crossfading from whatever is playing); pass null for the
- * interstitial pages, which keep the gentle default flowing instead of
- * going silent.
+ * Call on every game-scene change. Pass the scene id to set that scene's
+ * secondary mood (if any) over the continuous main track; pass null for the
+ * interstitial pages, which keep the gentle background flowing.
  */
 export function setAmbientScene(sceneId: number | null): void {
   routeTo(sceneId);
 }
 
 /**
- * Start downloading every track up front — no user gesture is required for
- * loading (only play() is gated by browsers). This guarantees the busy and
- * night moods are already in the HTTP cache by the time their scenes arrive,
- * so the crossfade is instant instead of stalling while a multi-MB file
- * downloads mid-session (which made the music seem to "never change").
- * Elements are created silently at volume 0 and stay paused.
+ * Start downloading every track into the HTTP cache up front — no user gesture
+ * is required for a plain fetch (only play() is gated by browsers). This keeps
+ * the secondary src-swaps snappy later: the busy/night files are multi-MB and
+ * would otherwise stall mid-session. Skipped on slow / data-saver connections
+ * to be polite to participants.
  */
 export function preloadAmbientMusic(): void {
-  for (const key of TRACK_KEYS) {
-    ensureElement(key);
+  try {
+    const nav = navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string };
+    };
+    const conn = nav.connection;
+    if (conn?.saveData || conn?.effectiveType === 'slow-2g' || conn?.effectiveType === '2g') {
+      return;
+    }
+  } catch {
+    /* connection API unavailable — just preload */
+  }
+  const all: TrackKey[] = ['morning', ...SECONDARY_KEYS];
+  for (const key of all) {
+    fetch(resolveSrc(TRACK_FILES[key]), { cache: 'default', credentials: 'omit' })
+      .then((r) => r.blob())
+      .catch(() => undefined);
   }
 }
 
 /**
  * Call inside the real user gesture on Warning ("I Understand, Continue").
- * Unlocks the audio engine, sets music on by default if the
- * participant hasn't chosen, and starts the continuous ambient mix (the
- * gentle default on these early pages, the scene's track once a scene loads).
+ * Builds/resumes the Web Audio engine, starts the continuous main background,
+ * and sets music on by default if the participant hasn't chosen. This is the
+ * single moment the browser grants audio playback, so we start here.
  */
 export function prepareAmbientAudio(): void {
   if (!hasStoredPreference()) {
     enabled = true;
     persistPreference(true);
   }
-  // Briefly play EVERY track at zero volume so each element is unlocked for
-  // later play() calls (browsers require a user gesture per element; touching
-  // all four here lets any mood's track start once its scene loads).
-  for (const key of TRACK_KEYS) {
-    const el = ensureElement(key);
-    if (!el) continue;
-    const prevVol = el.volume;
-    el.volume = 0;
-    el.play()?.then(() => {
-      el.volume = prevVol;
-    }).catch(() => {
-      el.volume = prevVol;
-    });
-  }
-  // Start the continuous mix (idle morning on non-scene pages; the scene
-  // tracks will be routed in when the game loads).
+  if (!enabled || !ensureGraph()) return;
+
+  resumeContext();
+  // Start the continuous main loop within this gesture, then immediately
+  // re-route to whatever page we actually land on.
+  ensureMainPlaying();
   routeTo(activeScene);
 }
 
@@ -302,11 +427,25 @@ export function prepareAmbientAudio(): void {
 export function toggleAmbientMusic(): boolean {
   enabled = !enabled;
   persistPreference(enabled);
+
   if (enabled) {
-    routeTo(activeScene); // resume the current foreground mix
+    if (ensureGraph()) {
+      resumeContext();
+      ensureMainPlaying(); // resume the loop if a toggle-off had paused it
+      routeTo(activeScene); // retune / crossfade the current mix
+    }
   } else {
-    applyMix({ alarm: 0, morning: 0, busy: 0, night: 0 }); // gently fade to silence
+    switchToken++; // cancel any pending src-swap
+    fadeMain(0);   // gently fade both streams to silence...
+    fadeSecondary(0);
+    window.setTimeout(() => {
+      if (!enabled) {
+        if (elSec) elSec.pause();
+        if (elMain) elMain.pause(); // ...then release the streams (only if still off)
+      }
+    }, 300);
   }
+
   window.dispatchEvent(new Event('ambient-music-change'));
   return enabled;
 }
