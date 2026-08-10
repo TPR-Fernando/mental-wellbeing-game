@@ -159,14 +159,16 @@ const AlarmSceneBg: React.FC = () => (
 // ── Main Component ───────────────────────────────────────────────────
 export const Game = () => {
   const navigate = useNavigate();
-  const { currentScene, sessionId, recordChoice, recordReactionTime, recordText, recordMiniGameWeight, nextScene } =
+  const { currentScene, sessionId, pendingMiniGame, recordChoice, recordReactionTime, recordText, recordMiniGameWeight, nextScene, setPendingMiniGame } =
     useGameStore();
 
   const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
   const [freeText, setFreeText] = useState('');
   const [showPrompt, setShowPrompt] = useState(false);
   const [msRemaining, setMsRemaining] = useState<number | null>(null);
-  const [miniGameIndex, setMiniGameIndex] = useState<number | null>(null);
+  // Initialize from the persisted store so a refresh mid-mini-game resumes the
+  // mini-game instead of dropping the participant back on the preceding scene.
+  const [miniGameIndex, setMiniGameIndex] = useState<number | null>(() => pendingMiniGame);
   const [entering, setEntering] = useState(true);
 
   const sceneStartRef = useRef<number>(performance.now());
@@ -261,10 +263,11 @@ export const Game = () => {
     if (!choiceSet || !Array.isArray(choiceSet.words) || choiceSet.words.length === 0) {
       // Fail-safe: never leave the player on a blank screen if mini-game data is missing.
       console.error(`Missing or invalid word-choice mini-game data for index ${miniGameIndex}. Skipping mini-game.`);
+      setPendingMiniGame(null);
       setMiniGameIndex(null);
       nextScene();
     }
-  }, [miniGameIndex, nextScene]);
+  }, [miniGameIndex, nextScene, setPendingMiniGame]);
 
   // ── Scene audio ────────────────────────────────────────────────────
   // Continuous ambient mix: each scene crossfades to its mood's track (only
@@ -338,6 +341,7 @@ export const Game = () => {
                   }
 
                   // Complete the mini-game
+                  setPendingMiniGame(null);
                   setMiniGameIndex(null);
                   nextScene();
                 }}
@@ -358,6 +362,8 @@ export const Game = () => {
     const mg = MINIGAME_AFTER_SCENE[currentScene];
     if (mg) {
       miniGameStartRef.current = performance.now();
+      // Persist which mini-game is in progress so a refresh mid-mini-game resumes it.
+      setPendingMiniGame(mg);
       setMiniGameIndex(mg);
     } else nextScene();
   };

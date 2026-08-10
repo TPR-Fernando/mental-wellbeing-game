@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth, signOut } from '../firebase';
 import { useGameStore } from '../store/gameStore';
-import { checkUserAlreadyCompleted, linkSessionToUser } from '../services/firestoreSession';
+import { checkUserAlreadyCompleted, linkSessionToUser, recoverMissingSession } from '../services/firestoreSession';
+import { getDeviceType } from '../utils/device';
 import { getAudioCtxInstance, playHoverSound, playStartSound } from './Home';
 
 // ── Particles (same pattern as Warning / Home) ───────────────────────
@@ -23,7 +24,7 @@ const PARTICLES: Particle[] = Array.from({ length: 22 }, (_, i) => ({
 
 export const GoogleLogin = () => {
   const navigate = useNavigate();
-  const { sessionId, setUserId } = useGameStore();
+  const { sessionId, setSession, setUserId } = useGameStore();
   const audioCtxRef = useRef<AudioContext | null>(null);
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +69,21 @@ export const GoogleLogin = () => {
       }
 
       if (sessionId) {
-        await linkSessionToUser(sessionId, uid);
+        try {
+          await linkSessionToUser(sessionId, uid);
+        } catch (linkErr) {
+          const le = linkErr as { code?: string };
+          // The in-progress session doc no longer exists (deleted/lost server-side while this link
+          // still held its id), so the write was rejected as an invalid create. Recreate a fresh,
+          // well-formed session owned by this user so the summary flow can still save.
+          if (le.code === 'permission-denied' || le.code === 'not-found') {
+            console.warn('Session link failed (session likely deleted); recreating a fresh session.', le);
+            const freshId = await recoverMissingSession(uid, getDeviceType());
+            setSession(freshId);
+          } else {
+            throw linkErr;
+          }
+        }
       }
       navigate('/summary', { replace: true });
     } catch (err) {
@@ -76,6 +91,12 @@ export const GoogleLogin = () => {
       // User closed the popup — not an error worth showing
       if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
         setError(null);
+      } else if (e.code === 'permission-denied' || e.code === 'storage/permission-denied') {
+        // A Firestore rules denial during the post-auth session-link write (linkSessionToUser).
+        // This is NOT a Google auth failure — name it clearly so it isn't misread as a sign-in
+        // problem (e.g. by someone debugging `firestore.rules`).
+        console.error('Session-link write denied by Firestore rules:', err);
+        setError("We couldn't link your session to this account due to a permissions error. Please try again or contact the study team.");
       } else {
         console.error('Google sign-in failed:', err);
         setError('Sign-in failed. Please try again.');

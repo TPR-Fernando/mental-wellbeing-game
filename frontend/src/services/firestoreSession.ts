@@ -135,6 +135,25 @@ export async function linkSessionToUser(sessionId: string, userId: string): Prom
   await setDoc(ref, { userId }, { merge: true });
 }
 
+// If an in-progress session document no longer exists (deleted or lost server-side while the
+// participant's link kept its id), the authenticated link write above would be rejected, because it
+// would be an invalid `create` (the consent-time fields are missing) rather than an `update`. This
+// recreates a fresh, well-formed session already owned by this user, so the summary/questionnaire
+// flow still has a valid document to write to.
+export async function recoverMissingSession(uid: string, deviceType: DeviceType): Promise<string> {
+  const ref = doc(collection(db, 'sessions'));
+  await setDoc(ref, {
+    consentGiven: true,
+    deviceType,
+    createdAt: serverTimestamp(),
+    completedAt: null,
+    status: 'in_progress',
+    currentScene: 1,
+    userId: uid,
+  });
+  return ref.id;
+}
+
 // One account may take the assessment only once. Checks Firestore directly — the
 // firestore.rules `allow read` now permits authenticated users to read only their
 // own sessions (matched by userId == auth.uid). A single-field equality filter on

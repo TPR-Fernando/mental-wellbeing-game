@@ -121,7 +121,7 @@ export const Warning = () => {
                 environment before beginning.
               </li>
               <li>
-                <strong>Estimated time:</strong> This experience takes approximately 10-15 minutes to complete.
+                <strong>Estimated time:</strong> This experience takes approximately 5-10 minutes to complete.
               </li>
             </ul>
           </div>

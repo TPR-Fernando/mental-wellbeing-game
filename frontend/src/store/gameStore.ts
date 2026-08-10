@@ -9,6 +9,29 @@ interface PersistedSession {
   wellbeingSummary: string | null;
   groundTruthScores: { who5Score: number; swemwbsScore: number } | null;
   predictedScores: { who5Predicted: number; swemwbsPredicted: number } | null;
+  // ── Game progression ──────────────────────────────────────────────
+  // Persisted alongside the session metadata so a browser refresh mid-game resumes
+  // at the same scene (even mid-mini-game) instead of restarting at Scene 1, and so
+  // resetGame() can clear them for a genuinely fresh playthrough.
+  currentScene: number;
+  choices: Record<number, number>;
+  reactionTimes: Record<number, number>;
+  freeTextAnswers: Record<number, string>;
+  miniGameWeights: Record<number, -1 | 0 | 1>;
+  pendingMiniGame: number | null;
+}
+
+// JSON round-trips object keys into strings; TS's Record<number, T> still indexes them
+// correctly via numeric coercion, so this is just a validated object-of-T guard.
+function asRecord<T>(raw: unknown, isValidValue: (value: unknown) => boolean): Record<number, T> {
+  if (typeof raw !== 'object' || raw === null) return {};
+  return Object.fromEntries(
+    Object.entries(raw).filter(([, value]) => isValidValue(value)),
+  ) as Record<number, T>;
+}
+
+function isPositiveSceneNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1;
 }
 
 function loadPersistedSession(): PersistedSession {
@@ -19,6 +42,12 @@ function loadPersistedSession(): PersistedSession {
     wellbeingSummary: null,
     groundTruthScores: null,
     predictedScores: null,
+    currentScene: 1,
+    choices: {},
+    reactionTimes: {},
+    freeTextAnswers: {},
+    miniGameWeights: {},
+    pendingMiniGame: null,
   };
   if (typeof window === 'undefined') return empty;
   try {
@@ -42,6 +71,12 @@ function loadPersistedSession(): PersistedSession {
         typeof parsed.predictedScores.swemwbsPredicted === 'number'
           ? parsed.predictedScores
           : null,
+      currentScene: isPositiveSceneNumber(parsed.currentScene) ? parsed.currentScene : 1,
+      choices: asRecord<number>(parsed.choices, (v) => typeof v === 'number' && !Number.isNaN(v)),
+      reactionTimes: asRecord<number>(parsed.reactionTimes, (v) => typeof v === 'number' && v >= 0),
+      freeTextAnswers: asRecord<string>(parsed.freeTextAnswers, (v) => typeof v === 'string'),
+      miniGameWeights: asRecord<-1 | 0 | 1>(parsed.miniGameWeights, (v) => v === -1 || v === 0 || v === 1),
+      pendingMiniGame: isPositiveSceneNumber(parsed.pendingMiniGame) ? parsed.pendingMiniGame : null,
     };
   } catch {
     return empty;
@@ -49,11 +84,26 @@ function loadPersistedSession(): PersistedSession {
 }
 
 // Reads-then-writes so any single field can be updated without clobbering the others
-// (wellbeingSummary and groundTruthScores are set at different points in the flow).
-function persistSession(patch: Partial<Omit<PersistedSession, 'sessionId'>> & { sessionId: string }) {
+// (wellbeingSummary, groundTruthScores and the game-progression fields are each set
+// at different points in the flow).
+function persistSession(patch: Partial<PersistedSession>): void {
   if (typeof window === 'undefined') return;
   const current = loadPersistedSession();
   window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ ...current, ...patch }));
+}
+
+// Persists only the game-progression fields; the session-metadata setters already
+// persist their own fields, and the read-then-write merge above keeps both groups in
+// sync. Guarded on sessionId for parity with those setters (progression mutations are
+// unreachable before consent creates a session anyway).
+function persistGameProgression(
+  sessionId: string | null,
+  progression: Partial<
+    Pick<PersistedSession, 'currentScene' | 'choices' | 'reactionTimes' | 'freeTextAnswers' | 'miniGameWeights' | 'pendingMiniGame'>
+  >,
+): void {
+  if (!sessionId) return;
+  persistSession(progression);
 }
 
 interface GameState {
@@ -62,6 +112,7 @@ interface GameState {
   reactionTimes: Record<number, number>; // Maps scene index to ms from scene render to choice tap
   freeTextAnswers: Record<number, string>; // Maps scene index to text
   miniGameWeights: Record<number, -1 | 0 | 1>; // Maps mini-game index (1-3) to weight; feeds only into AI summary
+  pendingMiniGame: number | null; // Mini-game awaiting completion (persisted so a refresh mid-mini-game resumes it)
   sessionId: string | null;
   consentGiven: boolean;
   userId: string | null;
@@ -73,6 +124,7 @@ interface GameState {
   recordText: (sceneIndex: number, text: string) => void;
   recordMiniGameWeight: (miniGameIndex: number, weight: -1 | 0 | 1) => void;
   nextScene: () => void;
+  setPendingMiniGame: (miniGameIndex: number | null) => void;
   resetGame: () => void;
   setSession: (sessionId: string) => void;
   setWellbeingSummary: (summary: string) => void;
@@ -86,11 +138,12 @@ export const useGameStore = create<GameState>((set, get) => {
   const persisted = loadPersistedSession();
 
   return {
-    currentScene: 1,
-    choices: {},
-    reactionTimes: {},
-    freeTextAnswers: {},
-    miniGameWeights: {},
+    currentScene: persisted.currentScene,
+    choices: persisted.choices,
+    reactionTimes: persisted.reactionTimes,
+    freeTextAnswers: persisted.freeTextAnswers,
+    miniGameWeights: persisted.miniGameWeights,
+    pendingMiniGame: persisted.pendingMiniGame,
     sessionId: persisted.sessionId,
     consentGiven: persisted.consentGiven,
     userId: persisted.userId,
@@ -99,24 +152,32 @@ export const useGameStore = create<GameState>((set, get) => {
     predictedScores: persisted.predictedScores,
 
     recordChoice: (sceneIndex, weight) =>
-      set((state) => ({
-        choices: { ...state.choices, [sceneIndex]: weight },
-      })),
+      set((state) => {
+        const choices = { ...state.choices, [sceneIndex]: weight };
+        persistGameProgression(state.sessionId, { choices });
+        return { choices };
+      }),
 
     recordReactionTime: (sceneIndex, ms) =>
-      set((state) => ({
-        reactionTimes: { ...state.reactionTimes, [sceneIndex]: ms },
-      })),
+      set((state) => {
+        const reactionTimes = { ...state.reactionTimes, [sceneIndex]: ms };
+        persistGameProgression(state.sessionId, { reactionTimes });
+        return { reactionTimes };
+      }),
 
     recordText: (sceneIndex, text) =>
-      set((state) => ({
-        freeTextAnswers: { ...state.freeTextAnswers, [sceneIndex]: text },
-      })),
+      set((state) => {
+        const freeTextAnswers = { ...state.freeTextAnswers, [sceneIndex]: text };
+        persistGameProgression(state.sessionId, { freeTextAnswers });
+        return { freeTextAnswers };
+      }),
 
     recordMiniGameWeight: (miniGameIndex, weight) =>
-      set((state) => ({
-        miniGameWeights: { ...state.miniGameWeights, [miniGameIndex]: weight },
-      })),
+      set((state) => {
+        const miniGameWeights = { ...state.miniGameWeights, [miniGameIndex]: weight };
+        persistGameProgression(state.sessionId, { miniGameWeights });
+        return { miniGameWeights };
+      }),
 
     // Used to judge Scene 11's hesitation relative to this participant's own pace,
     // rather than a fixed cutoff (see game_question_set.md, Scene 11).
@@ -128,19 +189,33 @@ export const useGameStore = create<GameState>((set, get) => {
     },
 
     nextScene: () =>
-      set((state) => ({
-        currentScene: state.currentScene + 1,
-      })),
+      set((state) => {
+        const currentScene = state.currentScene + 1;
+        persistGameProgression(state.sessionId, { currentScene });
+        return { currentScene };
+      }),
+
+    setPendingMiniGame: (pendingMiniGame) =>
+      set((state) => {
+        persistGameProgression(state.sessionId, { pendingMiniGame });
+        return { pendingMiniGame };
+      }),
 
     // Note: intentionally does not touch sessionId/consentGiven — those persist for the
-    // lifetime of the participant's link, only game progression resets.
+    // lifetime of the participant's link, only game progression resets. The cleared
+    // progression is persisted too, so a refresh after resetting can't resurrect it.
     resetGame: () =>
-      set({
-        currentScene: 1,
-        choices: {},
-        reactionTimes: {},
-        freeTextAnswers: {},
-        miniGameWeights: {},
+      set((state) => {
+        const freshProgress = {
+          currentScene: 1,
+          choices: {},
+          reactionTimes: {},
+          freeTextAnswers: {},
+          miniGameWeights: {},
+          pendingMiniGame: null,
+        };
+        persistGameProgression(state.sessionId, freshProgress);
+        return freshProgress;
       }),
 
     setSession: (sessionId) =>

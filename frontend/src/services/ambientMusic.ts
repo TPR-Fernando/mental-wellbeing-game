@@ -69,9 +69,9 @@ const SWITCH_FADE_MS = 420; // how long to duck before swapping the secondary tr
 // little (yet still clearly audible); alarm.mp3 volume is NOT changed.
 const TRACK_GAIN: Record<TrackKey, number> = {
   alarm: 1.0,   // keep as-is
-  morning: 0.6, // loudest -> cut the most
+  morning: 0.3, // loudest -> cut the most
   busy: 0.8,    // a bit quieter, still clear
-  night: 0.8,   // a bit quieter, still clear
+  night: 0.9,   // a bit quieter, still clear
 };
 
 // -- Graph: two elements, each with its own GainNode, summed to the output --

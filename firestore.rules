@@ -24,7 +24,7 @@ service cloud.firestore {
                     )
                     && (
                       // Allow unauthenticated incremental writes (during gameplay)
-                      !request.auth != null
+                      request.auth == null
                       // OR an authenticated user linking their UID to the session
                       || (request.auth != null
                           && request.resource.data.userId == request.auth.uid)
