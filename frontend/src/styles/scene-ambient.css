@@ -272,10 +272,17 @@
     border-radius: 18px 5px 18px 5px;
   }
   .question-title { font-size: 1rem !important; }
-  .question-text  { font-size: 0.9rem; line-height: 1.65; }
+  .question-text  { font-size: 0.96rem; line-height: 1.6; }
 
-  .answer-cloud { padding: 11px 15px 18px; font-size: 0.88rem; max-width: 96%; }
-  .answers-count-2 .answer-cloud { max-width: 48%; font-size: 0.84rem; }
+  .answers-grid { gap: 8px; }
+  .answer-cloud {
+    min-height: 56px !important;
+    padding: 9px 13px 13px;
+    font-size: 0.84rem;
+    max-width: 96%;
+  }
+  .answers-count-2 { gap: 8px; }
+  .answers-count-2 .answer-cloud { max-width: 48%; font-size: 0.8rem; }
 
   .free-text-overlay { margin-top: 4.5rem; padding: 1.2rem 1.25rem; }
 
@@ -285,8 +292,11 @@
 /* ── Landscape mobile: collapse spacing ─────────────────────────────── */
 @media (orientation: landscape) and (max-height: 560px) {
   .question-title   { font-size: 0.9rem !important; }
-  .question-text    { font-size: 0.84rem; line-height: 1.5; }
-  .answer-cloud     { padding: 9px 14px 15px; font-size: 0.84rem; }
+  .question-text    { font-size: 0.9rem; line-height: 1.5; }
+  .answers-grid     { gap: 7.7px; }
+  .answer-cloud     { min-height: 50px !important; padding: 8px 12px 11px; font-size: 0.8rem; }
+  .answers-count-2  { gap: 7px; }
+  .answers-count-2 .answer-cloud { font-size: 0.76rem; }
   .answers-heading  { display: none; }
   .alarm-window     { top: 5%; width: min(200px, 55vw); height: min(150px, 42vw); }
   .alarm-bedside    { top: calc(5% + min(150px, 42vw) + 8px + 8px); width: min(260px, 72vw); }

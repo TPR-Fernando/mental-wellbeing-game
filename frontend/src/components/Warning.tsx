@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAudioCtxInstance, playHoverSound, playStartSound } from '../components/Home'; // Reuse audio functions from Home
 import { prepareAmbientAudio } from '../services/ambientMusic';
@@ -22,35 +22,6 @@ const PARTICLES: Particle[] = Array.from({ length: 22 }, (_, i) => ({
 export const Warning = () => {
   const navigate = useNavigate();
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const warningContentRef = useRef<HTMLDivElement | null>(null);
-  const [hasReachedBottom, setHasReachedBottom] = useState(false);
-
-  useEffect(() => {
-    const warningContent = warningContentRef.current;
-
-    if (!warningContent) {
-      return undefined;
-    }
-
-    const updateBottomState = () => {
-      const { scrollTop, scrollHeight, clientHeight } = warningContent;
-      const reachedBottom = scrollTop + clientHeight >= scrollHeight - 8;
-      const contentFitsWithoutScroll = scrollHeight <= clientHeight + 8;
-
-      if (reachedBottom || contentFitsWithoutScroll) {
-        setHasReachedBottom(true);
-      }
-    };
-
-    updateBottomState();
-    warningContent.addEventListener('scroll', updateBottomState, { passive: true });
-    window.addEventListener('resize', updateBottomState);
-
-    return () => {
-      warningContent.removeEventListener('scroll', updateBottomState);
-      window.removeEventListener('resize', updateBottomState);
-    };
-  }, []);
 
   // Warm the final stretch while the participant reads the notice —
   // scenes 10-15 include the busy/night moods whose backdrops (and music)
@@ -60,10 +31,6 @@ export const Warning = () => {
   }, []);
   
   const handleAccept = () => {
-    if (!hasReachedBottom) {
-      return;
-    }
-
     const ctx = getAudioCtxInstance(audioCtxRef);
     playStartSound(ctx);
     
@@ -85,10 +52,6 @@ export const Warning = () => {
   };
 
   const handleButtonHover = () => {
-    if (!hasReachedBottom) {
-      return;
-    }
-
     const ctx = getAudioCtxInstance(audioCtxRef);
     playHoverSound(ctx);
   };
@@ -116,7 +79,7 @@ export const Warning = () => {
 
       <div className="scene-card warning-card">
         {/* Eyebrow */}
-        <span className="warning-eyebrow">⚠️ Important Notice</span>
+        <span className="warning-eyebrow">Important Notice</span>
         
         {/* Title */}
         <h1 className="warning-title">Student Wellbeing Study</h1>
@@ -125,10 +88,7 @@ export const Warning = () => {
         <div className="warning-rule" />
         
         {/* Scrollable content section */}
-        <div
-          ref={warningContentRef}
-          className="warning-content scrollable-content"
-        >
+        <div className="warning-content scrollable-content">
           <div className="warning-section">
             <h2 className="warning-section-title">This is NOT a Medical Diagnosis</h2>
             <p className="warning-section-text">
@@ -142,7 +102,7 @@ export const Warning = () => {
           </div>
 
           <div className="warning-section">
-            <h2 className="warning-section-title">📋 Test Guidelines</h2>
+            <h2 className="warning-section-title">Test Guidelines</h2>
             <ul className="warning-list">
               <li>
                 <strong>Complete in one sitting:</strong> This experience should be completed in a single 
@@ -167,7 +127,7 @@ export const Warning = () => {
           </div>
 
           <div className="warning-section">
-            <h2 className="warning-section-title">🆘 Crisis Resources</h2>
+            <h2 className="warning-section-title">Crisis Resources</h2>
             <p className="warning-section-text">
               If you are in crisis or experiencing thoughts of self-harm:
             </p>
@@ -192,7 +152,6 @@ export const Warning = () => {
             onClick={handleAccept}
             onMouseEnter={handleButtonHover}
             className="warning-button warning-continue-button"
-            disabled={!hasReachedBottom}
           >
             I Understand, Continue
           </button>
