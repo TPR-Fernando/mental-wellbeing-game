@@ -6,6 +6,11 @@ interface PersistedSession {
   sessionId: string | null;
   consentGiven: boolean;
   userId: string | null;
+  // True once a participant reaches the final /completion screen. For guests (no userId) this is
+  // the signal that they've already finished, so a returning guest is told so instead of being
+  // allowed to replay. Google-account users keep the existing duplicate-prevention flow and are
+  // unaffected (their completion is enforced via the UID check in GoogleLogin).
+  completed: boolean;
   wellbeingSummary: string | null;
   groundTruthScores: { who5Score: number; swemwbsScore: number } | null;
   predictedScores: { who5Predicted: number; swemwbsPredicted: number } | null;
@@ -39,6 +44,7 @@ function loadPersistedSession(): PersistedSession {
     sessionId: null,
     consentGiven: false,
     userId: null,
+    completed: false,
     wellbeingSummary: null,
     groundTruthScores: null,
     predictedScores: null,
@@ -58,6 +64,7 @@ function loadPersistedSession(): PersistedSession {
       sessionId: typeof parsed.sessionId === 'string' ? parsed.sessionId : null,
       consentGiven: parsed.consentGiven === true,
       userId: typeof parsed.userId === 'string' ? parsed.userId : null,
+      completed: parsed.completed === true,
       wellbeingSummary: typeof parsed.wellbeingSummary === 'string' ? parsed.wellbeingSummary : null,
       groundTruthScores:
         parsed.groundTruthScores &&
@@ -116,6 +123,7 @@ interface GameState {
   sessionId: string | null;
   consentGiven: boolean;
   userId: string | null;
+  completed: boolean;
   wellbeingSummary: string | null;
   groundTruthScores: { who5Score: number; swemwbsScore: number } | null;
   predictedScores: { who5Predicted: number; swemwbsPredicted: number } | null;
@@ -127,6 +135,7 @@ interface GameState {
   setPendingMiniGame: (miniGameIndex: number | null) => void;
   resetGame: () => void;
   setSession: (sessionId: string) => void;
+  setCompleted: () => void;
   setWellbeingSummary: (summary: string) => void;
   setUserId: (uid: string) => void;
   setGroundTruthScores: (scores: { who5Score: number; swemwbsScore: number }) => void;
@@ -147,6 +156,7 @@ export const useGameStore = create<GameState>((set, get) => {
     sessionId: persisted.sessionId,
     consentGiven: persisted.consentGiven,
     userId: persisted.userId,
+    completed: persisted.completed,
     wellbeingSummary: persisted.wellbeingSummary,
     groundTruthScores: persisted.groundTruthScores,
     predictedScores: persisted.predictedScores,
@@ -222,6 +232,14 @@ export const useGameStore = create<GameState>((set, get) => {
       set((state) => {
         persistSession({ sessionId, consentGiven: true, userId: state.userId, wellbeingSummary: state.wellbeingSummary, groundTruthScores: state.groundTruthScores, predictedScores: state.predictedScores });
         return { sessionId, consentGiven: true };
+      }),
+
+    // Marks a session as finished (called when the participant reaches /completion). persistSession
+    // merges this with the currently stored session, so all other fields are preserved.
+    setCompleted: () =>
+      set((state) => {
+        persistSession({ completed: true });
+        return { completed: true };
       }),
 
     setWellbeingSummary: (summary) =>

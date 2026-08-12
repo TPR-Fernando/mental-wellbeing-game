@@ -43,12 +43,17 @@ export const Completion = () => {
   const wellbeingSummary = useGameStore((state) => state.wellbeingSummary);
   const groundTruthScores = useGameStore((state) => state.groundTruthScores);
   const predictedScores = useGameStore((state) => state.predictedScores);
+  const setCompleted = useGameStore((state) => state.setCompleted);
 
   // The Google login must never be cached between visits (one account = one assessment). Sign out
   // as soon as the participant reaches the final screen so the auth state cannot linger for the
-  // next person using this browser.
+  // next person using this browser. Also mark the session completed so a returning guest is told
+  // they've already finished rather than being allowed to replay (Google users are handled by the
+  // UID duplicate check on the login screen, so this flag only affects guests).
   useEffect(() => {
+    setCompleted();
     void signOut(auth).catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

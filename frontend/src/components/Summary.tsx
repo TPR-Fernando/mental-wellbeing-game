@@ -152,8 +152,8 @@ export const Summary = () => {
     if (decisionTimeMs !== undefined && decisionTimeMs !== null) {
       const timedOut = timedLimitMs !== null && decisionTimeMs >= timedLimitMs;
       rtSummaryStr = timedOut
-        ? `timed out at ${((timedLimitMs ?? decisionTimeMs) / 1000).toFixed(1)}s without making a decision`
-        : `decided in ${(decisionTimeMs / 1000).toFixed(1)}s on the timed decision`;
+        ? `reached the end of the ${((timedLimitMs ?? decisionTimeMs) / 1000).toFixed(1)}s countdown on the timed decision`
+        : `decided in ${(decisionTimeMs / 1000).toFixed(1)}s of the timed decision`;
     }
     setReactionTimeSummary(rtSummaryStr);
 
@@ -170,6 +170,14 @@ export const Summary = () => {
     // a decision under the countdown, the stronger the behavioural signal; failing to decide
     // (timeout) is the strongest avoidance signal, so it scores lowest. Regular scenes are
     // excluded because their times mainly reflect reading speed, not hesitation.
+    //
+    // The thresholds are deliberately loose: Scene 11 asks the participant to read a fairly long
+    // prompt plus two options before answering, so a "normal" reading+thinking time lands in a
+    // neutral/high band rather than being penalised as slow. Only an actual timeout, or a decision
+    // within ~a second of the deadline, reads as a meaningful (negative) decisiveness signal.
+    // NOTE: this only reshapes the user-facing score. The raw timeMs / reactionTimeMs values
+    // written to Firestore (Game.tsx / firestoreSession.ts) are untouched and remain the exact
+    // measured delays used for the offline research analysis.
     let timingScore = 50;
     if (decisionTimeMs !== undefined && decisionTimeMs !== null) {
       const timedOut = timedLimitMs !== null && decisionTimeMs >= timedLimitMs;
@@ -177,7 +185,10 @@ export const Summary = () => {
         timingScore = 10;
       } else {
         const fraction = timedLimitMs !== null && timedLimitMs > 0 ? decisionTimeMs / timedLimitMs : 0.5;
-        timingScore = fraction <= 0.3 ? 90 : fraction <= 0.9 ? 60 : 30;
+        // fraction <= 0.5  (answered in about half the countdown or less)  -> comfortable/quick
+        // fraction <= 0.85 (a normal reading + decision time)              -> neutral-high
+        // otherwise (decided very close to the deadline)                   -> neutral, slightly low
+        timingScore = fraction <= 0.5 ? 85 : fraction <= 0.85 ? 70 : 40;
       }
     }
 

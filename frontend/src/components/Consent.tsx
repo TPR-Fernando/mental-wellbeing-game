@@ -11,10 +11,17 @@ import { preloadScenarioImages } from '../utils/preload';
 export const Consent = () => {
   const navigate = useNavigate();
   const consentGiven = useGameStore((state) => state.consentGiven);
+  const completed = useGameStore((state) => state.completed);
+  const userId = useGameStore((state) => state.userId);
   const setSession = useGameStore((state) => state.setSession);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // A guest (no Google userId) who already finished the assessment is told they've completed it
+  // instead of being allowed to replay. Google-account users are unaffected — their completion is
+  // enforced by the UID duplicate check on the login screen.
+  const returningGuestCompleted = completed && !userId;
 
   // While the participant reads the consent text, warm the caches so the flow
   // feels instant later: the first scenes' backdrops (the biggest files) and
@@ -25,14 +32,46 @@ export const Consent = () => {
     preloadScenarioImages([1, 2, 3, 4]);
   }, []);
 
-  // Side effects (navigation) belong in an effect, not directly in the render body.
+  // Side effects (navigation) belong in an effect, not directly in the render body. A returning
+  // completed guest must not be forwarded into the game — they see the "already completed" screen.
   useEffect(() => {
-    if (consentGiven) {
+    if (consentGiven && !returningGuestCompleted) {
       navigate('/home', { replace: true });
     }
-  }, [consentGiven, navigate]);
+  }, [consentGiven, returningGuestCompleted, navigate]);
 
-  if (consentGiven) return null;
+  if (consentGiven && !returningGuestCompleted) return null;
+
+  // Returning guest who has already finished — no consent form, just a polite notice.
+  if (returningGuestCompleted) {
+    return (
+      <div className="game-wrapper consent-wrapper">
+        <div className="scene-card consent-card">
+          <div className="consent-header">
+            <span className="consent-eyebrow">Already Completed</span>
+            <h1 className="consent-title">Thanks for playing!</h1>
+            <p className="consent-subtitle">
+              You have already completed this assessment, so there's nothing more to do.
+            </p>
+          </div>
+
+          <div className="consent-divider" />
+
+          <div className="consent-content scrollable-content">
+            <div className="consent-agreement-section">
+              <p className="consent-paragraph">
+                You've finished the full study session for this device. Because the assessment can
+                only be taken once, you can't play through it again.
+              </p>
+              <p className="consent-paragraph" style={{ marginTop: '0.75rem' }}>
+                Thank you for your time — it's much appreciated.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleAgree = async () => {
     setSubmitting(true);
@@ -80,7 +119,14 @@ export const Consent = () => {
                 <p className="consent-info-label">Anonymity & data</p>
                 <p className="consent-info-text">
                   No name, email, or identifying information is collected. Your responses are
-                  stored only against a randomly generated session ID.
+                  stored only against a randomly generated session ID — there is nothing tying
+                  them back to you.
+                </p>
+                <p className="consent-info-text" style={{ marginTop: '0.5rem' }}>
+                  Signing in with Google later is optional and exists solely to prevent one
+                  account completing the assessment twice. If you choose to, we store only your
+                  Google UID — never your name, email, photo, or any other profile data. You may
+                  equally continue as a guest, staying completely anonymous.
                 </p>
               </div>
             </div>

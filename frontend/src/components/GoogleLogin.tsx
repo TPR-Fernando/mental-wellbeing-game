@@ -27,6 +27,7 @@ export const GoogleLogin = () => {
   const { sessionId, setSession, setUserId } = useGameStore();
   const audioCtxRef = useRef<AudioContext | null>(null);
   const [signingIn, setSigningIn] = useState(false);
+  const [startingGuest, setStartingGuest] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Note: there is deliberately no onAuthStateChanged auto-forward. The Google login is never
@@ -110,6 +111,18 @@ export const GoogleLogin = () => {
     playHoverSound(ctx);
   };
 
+  // Guest path: the session was already created at consent, so no sign-in is needed. We just
+  // continue straight to the results. Exactly the same anonymous data set is used as with Google
+  // sign-in — the only thing skipped is the UID-based duplicate-prevention check (which requires
+  // an authenticated account). This is deliberate: a guest stays fully anonymous.
+  const handleGuest = () => {
+    setError(null);
+    setStartingGuest(true);
+    const ctx = getAudioCtxInstance(audioCtxRef);
+    playStartSound(ctx);
+    navigate('/summary', { replace: true });
+  };
+
   return (
     <div className="game-wrapper warning-wrapper">
       {/* Floating background particles */}
@@ -136,21 +149,24 @@ export const GoogleLogin = () => {
         <span className="warning-eyebrow">Almost there</span>
 
         {/* Title */}
-        <h1 className="warning-title">Sign In to See Your Results</h1>
+        <h1 className="warning-title">Your Results Are Ready</h1>
 
         {/* Decorative rule */}
         <div className="warning-rule" />
 
-        {/* Explanation */}
-        <div className="warning-section">
-          <p className="warning-section-text">
-            Your game session is saved. Sign in with Google so your results and
-            wellbeing summary can be securely linked to your account.
-          </p>
-          <p className="warning-section-text">
-            We only store your Google UID — no personal information from your
-            Google account is saved or shared.
-          </p>
+        {/* Explanation — inside .warning-content so it scrolls while the buttons stay visible */}
+        <div className="warning-content">
+          <div className="warning-section">
+            <p className="warning-section-text">
+              This assessment is fully anonymous - your responses are stored against a random
+              session ID only, with no personal data.
+            </p>
+            <p className="warning-section-text">
+              Signing in with Google only prevents one account taking it twice; we store just your
+              Google UID and nothing else. Prefer not to? Use <strong>Continue as Guest</strong> -
+              you stay just as anonymous.
+            </p>
+          </div>
         </div>
 
         {error && (
@@ -163,19 +179,27 @@ export const GoogleLogin = () => {
         )}
 
         {/* Google sign-in button */}
-        <div className="warning-buttons" style={{ flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="warning-buttons" style={{ flexDirection: 'column', alignItems: 'center', gap: '0.9rem' }}>
           <button
             onClick={handleSignIn}
             onMouseEnter={handleHover}
             disabled={signingIn}
             className="warning-button warning-continue-button google-signin-btn"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', maxWidth: '280px', width: '100%', justifyContent: 'center' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.1rem', maxWidth: '280px', width: '100%', justifyContent: 'center' }}
           >
-            {/* Google "G" logo */}
-            <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
-              <path fill="#FFF" d="M44.5 20H24v8.5h11.7C34.1 33.2 29.6 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l6-6C34.5 6.4 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.4-7.7 19.4-19.4 0-1.3-.1-2.5-.4-3.6z"/>
-            </svg>
+
             {signingIn ? 'Signing in…' : 'Continue with Google'}
+          </button>
+
+          {/* Guest sign-in — secondary option, same size as the Google button */}
+          <button
+            onClick={handleGuest}
+            onMouseEnter={handleHover}
+            disabled={startingGuest}
+            className="warning-button warning-back-button google-guest-btn"
+            style={{ display: 'flex', alignItems: 'center', gap: '1rem', maxWidth: '280px', width: '100%', justifyContent: 'center' }}
+          >
+            {startingGuest ? 'Loading your results…' : 'Continue as Guest'}
           </button>
         </div>
       </div>
