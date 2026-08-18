@@ -115,7 +115,7 @@ export const Consent = () => {
               <div>
                 <p className="consent-info-label">Time commitment</p>
                 <p className="consent-info-text">
-                  Approximately <strong>10–15 minutes</strong> from start to finish.
+                  Approximately <strong>5–10 minutes</strong> from start to finish.
                 </p>
               </div>
             </div>

@@ -255,7 +255,7 @@ export const Home = () => {
 
         {/* Info chips */}
         <div className="home-chips">
-          <span className="home-chip">10–15 minutes</span>
+          <span className="home-chip">5–10 minutes</span>
           <span className="home-chip home-chip-counter">{sceneCount} scenes</span>
           <span className="home-chip">Anonymous</span>
         </div>
