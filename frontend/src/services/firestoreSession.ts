@@ -1,56 +1,11 @@
-import { collection, doc, getDocs, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
+import { collection, doc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { DeviceType } from '../utils/device';
-
-// Creates the session document immediately on consent, per COPILOT_BUILD_GUIDE.md Section 8.1 —
-// even a one-scene dropout must be captured, so this must not wait until later in the flow.
-export async function createSession(deviceType: DeviceType): Promise<string> {
-  const ref = doc(collection(db, 'sessions'));
-  await setDoc(ref, {
-    consentGiven: true,
-    deviceType,
-    createdAt: serverTimestamp(),
-    completedAt: null,
-    status: 'in_progress',
-    currentScene: 1,
-  });
-  return ref.id;
-}
 
 export interface SceneChoiceData {
   optionId: string;
   weight: number;
   timeMs: number;
-}
-
-// Per COPILOT_BUILD_GUIDE.md Section 6: never batch writes to the end. Write after every
-// scene, choice, mini-game, and free-text entry so mid-session dropouts still leave usable data.
-export async function saveSceneChoice(
-  sessionId: string,
-  sceneNumber: number,
-  choiceData: SceneChoiceData,
-): Promise<void> {
-  const ref = doc(db, 'sessions', sessionId);
-  // Use a dotted field path so Firestore updates only this scene. Merging a nested
-  // `choices` object replaces the previously stored scene entries, which loses all
-  // but the most recent score and reaction time.
-  await updateDoc(ref, {
-    [`choices.scene_${String(sceneNumber).padStart(2, '0')}`]: choiceData,
-    currentScene: sceneNumber,
-    status: 'in_progress',
-  });
-}
-
-export async function saveFreeText(
-  sessionId: string,
-  sceneNumber: number,
-  text: string,
-  sentimentScore: number | null,
-): Promise<void> {
-  const ref = doc(db, 'sessions', sessionId);
-  await updateDoc(ref, {
-    [`freeTexts.scene_${String(sceneNumber).padStart(2, '0')}`]: { text, sentimentScore },
-  });
 }
 
 export interface MiniGameResult {
@@ -60,15 +15,59 @@ export interface MiniGameResult {
   sceneContext: string;
 }
 
-export async function saveMiniGame(
-  sessionId: string,
-  miniGameIndex: number,
-  result: MiniGameResult,
-): Promise<void> {
-  const ref = doc(db, 'sessions', sessionId);
-  await updateDoc(ref, {
-    [`minigames.mg_${String(miniGameIndex).padStart(2, '0')}`]: result,
+export interface FinalizeSessionInput {
+  deviceType: DeviceType;
+  userId: string | null;
+  currentScene: number;
+  sceneChoices: Record<number, SceneChoiceData>;
+  freeTexts: Record<number, { text: string; sentimentScore: number | null }>;
+  miniGames: Record<number, MiniGameResult>;
+}
+
+// Creates the ENTIRE session document in one atomic write, including all the gameplay data
+// collected locally while the participant played. This is only called once the participant
+// selects Guest or Google on the login screen — before that, nothing is in Firestore.
+// Each call generates a brand-new auto-generated sessionId, so it never reuses or overwrites
+// any earlier (now-abandoned) attempt.
+export async function finalizeSession(input: FinalizeSessionInput): Promise<string> {
+  const ref = doc(collection(db, 'sessions'));
+
+  // Normalise the rich local records into the exact Firestore field paths used by the
+  // running schema, so future incremental writes (postGameInterview, wellbeingSummary,
+  // groundTruth, preference) and the offline analysis all line up.
+  const choices: Record<string, SceneChoiceData> = {};
+  Object.entries(input.sceneChoices).forEach(([sceneNumber, data]) => {
+    choices[`scene_${String(sceneNumber).padStart(2, '0')}`] = data;
   });
+
+  const freeTexts: Record<string, { text: string; sentimentScore: number | null }> = {};
+  Object.entries(input.freeTexts).forEach(([sceneNumber, data]) => {
+    freeTexts[`scene_${String(sceneNumber).padStart(2, '0')}`] = data;
+  });
+
+  const minigames: Record<string, MiniGameResult> = {};
+  Object.entries(input.miniGames).forEach(([index, data]) => {
+    minigames[`mg_${String(index).padStart(2, '0')}`] = data;
+  });
+
+  const docData: Record<string, unknown> = {
+    consentGiven: true,
+    deviceType: input.deviceType,
+    createdAt: serverTimestamp(),
+    completedAt: null,
+    status: 'in_progress',
+    currentScene: input.currentScene,
+  };
+
+  if (input.userId) {
+    docData.userId = input.userId;
+  }
+  if (Object.keys(choices).length > 0) docData.choices = choices;
+  if (Object.keys(freeTexts).length > 0) docData.freeTexts = freeTexts;
+  if (Object.keys(minigames).length > 0) docData.minigames = minigames;
+
+  await setDoc(ref, docData);
+  return ref.id;
 }
 
 export interface PostGameInterview {

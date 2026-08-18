@@ -40,6 +40,9 @@
   line-height: 1.72;
   color: #4a3c70;
   margin-bottom: 2.25rem;
+  /* Thin outside stroke helps the reflective prompt read clearly */
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.9);
+  paint-order: stroke fill;
 }
 .wordchoice-words {
   display: flex;
@@ -64,6 +67,9 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
   letter-spacing: 0.04em;
   font-family: inherit;
+  /* Thin outside stroke around choice letters for readability */
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.9);
+  paint-order: stroke fill;
 }
 .wordchoice-btn:hover:not(:disabled) {
   transform: translateY(-3px) scale(1.05);

@@ -703,6 +703,13 @@
     color: #d4c6f0;
   }
 
+  /* Keep selected-option label readable — needs to match the specificity of
+     the light-mode `.qre-answer-option.selected span:last-child` rule so the
+     dark text (#3d2b6e) does not sit on the dark selected background. */
+  .qre-answer-option.selected span:last-child {
+    color: #f2ecff;
+  }
+
   /* Completion page dark overrides */
   .completion-summary-box {
     background: rgba(124, 92, 252, 0.12);

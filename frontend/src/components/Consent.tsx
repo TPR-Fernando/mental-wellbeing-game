@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
-import { createSession } from '../services/firestoreSession';
-import { getDeviceType } from '../utils/device';
 import { preloadAmbientMusic } from '../services/ambientMusic';
 import { preloadScenarioImages } from '../utils/preload';
 
@@ -12,16 +10,11 @@ export const Consent = () => {
   const navigate = useNavigate();
   const consentGiven = useGameStore((state) => state.consentGiven);
   const completed = useGameStore((state) => state.completed);
-  const userId = useGameStore((state) => state.userId);
-  const setSession = useGameStore((state) => state.setSession);
+  const resetSession = useGameStore((state) => state.resetSession);
+  const setConsentGiven = useGameStore((state) => state.setConsentGiven);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // A guest (no Google userId) who already finished the assessment is told they've completed it
-  // instead of being allowed to replay. Google-account users are unaffected — their completion is
-  // enforced by the UID duplicate check on the login screen.
-  const returningGuestCompleted = completed && !userId;
 
   // While the participant reads the consent text, warm the caches so the flow
   // feels instant later: the first scenes' backdrops (the biggest files) and
@@ -32,57 +25,37 @@ export const Consent = () => {
     preloadScenarioImages([1, 2, 3, 4]);
   }, []);
 
-  // Side effects (navigation) belong in an effect, not directly in the render body. A returning
-  // completed guest must not be forwarded into the game — they see the "already completed" screen.
+  // If the previous run already finished (completed), a new participant is starting now:
+  // wipe the whole stored session so they see this consent form again and get a brand-new
+  // sessionId on "Agree" — never reusing or overwriting the previous participant's data.
   useEffect(() => {
-    if (consentGiven && !returningGuestCompleted) {
+    if (completed) resetSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Resume an in-progress session on refresh, but never forward a finished session
+  // (it is reset above, so a returning participant always starts fresh from consent).
+  useEffect(() => {
+    if (consentGiven && !completed) {
       navigate('/home', { replace: true });
     }
-  }, [consentGiven, returningGuestCompleted, navigate]);
+  }, [consentGiven, completed, navigate]);
 
-  if (consentGiven && !returningGuestCompleted) return null;
-
-  // Returning guest who has already finished — no consent form, just a polite notice.
-  if (returningGuestCompleted) {
-    return (
-      <div className="game-wrapper consent-wrapper">
-        <div className="scene-card consent-card">
-          <div className="consent-header">
-            <span className="consent-eyebrow">Already Completed</span>
-            <h1 className="consent-title">Thanks for playing!</h1>
-            <p className="consent-subtitle">
-              You have already completed this assessment, so there's nothing more to do.
-            </p>
-          </div>
-
-          <div className="consent-divider" />
-
-          <div className="consent-content scrollable-content">
-            <div className="consent-agreement-section">
-              <p className="consent-paragraph">
-                You've finished the full study session for this device. Because the assessment can
-                only be taken once, you can't play through it again.
-              </p>
-              <p className="consent-paragraph" style={{ marginTop: '0.75rem' }}>
-                Thank you for your time — it's much appreciated.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (consentGiven && !completed) return null;
 
   const handleAgree = async () => {
     setSubmitting(true);
     setError(null);
     try {
-      const sessionId = await createSession(getDeviceType());
-      setSession(sessionId);
+      // Consent only marks the in-memory/persisted state as consented — a Firestore session
+      // document is NOT created here. All gameplay data stays local until the participant
+      // selects Guest or Google on the login screen, where a brand-new session is finalized
+      // (see firestoreSession.finalizeSession) with the complete gameplay record.
+      setConsentGiven();
       navigate('/home');
     } catch (err) {
-      console.error('Failed to create session:', err);
-      setError("We couldn't connect just now. Please check your connection and try again.");
+      console.error('Failed to record consent:', err);
+      setError("We couldn't start right now. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -119,13 +92,10 @@ export const Consent = () => {
                 <p className="consent-info-label">Anonymity & data</p>
                 <p className="consent-info-text">
                   No name, email, or identifying information is collected. Your responses are
-                  stored only against a randomly generated session ID — there is nothing tying
-                  them back to you.
+                  stored only against a randomly generated session ID.
                 </p>
                 <p className="consent-info-text" style={{ marginTop: '0.5rem' }}>
-                  Signing in with Google later is optional and exists solely to prevent one
-                  account completing the assessment twice. If you choose to, we store only your
-                  Google UID — never your name, email, photo, or any other profile data. You may
+                  If logged in through google, only your Google UID is stored. You may
                   equally continue as a guest, staying completely anonymous.
                 </p>
               </div>

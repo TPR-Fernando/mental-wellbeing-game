@@ -1,9 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth, signOut } from '../firebase';
 import { useGameStore } from '../store/gameStore';
-import { checkUserAlreadyCompleted, linkSessionToUser, recoverMissingSession } from '../services/firestoreSession';
+import { checkUserAlreadyCompleted, finalizeSession } from '../services/firestoreSession';
 import { getDeviceType } from '../utils/device';
 import { getAudioCtxInstance, playHoverSound, playStartSound } from './Home';
 
@@ -24,11 +24,32 @@ const PARTICLES: Particle[] = Array.from({ length: 22 }, (_, i) => ({
 
 export const GoogleLogin = () => {
   const navigate = useNavigate();
-  const { sessionId, setSession, setUserId } = useGameStore();
+  const { completed, setSession, setUserId, resetSession, currentScene, sceneChoices, freeTextAnswers, freeTextSentiments, miniGames } = useGameStore();
   const audioCtxRef = useRef<AudioContext | null>(null);
   const [signingIn, setSigningIn] = useState(false);
   const [startingGuest, setStartingGuest] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Builds the full local gameplay history ready for the one-shot Firestore write.
+  const buildFreeTexts = (): Record<number, { text: string; sentimentScore: number | null }> => {
+    const freeTexts: Record<number, { text: string; sentimentScore: number | null }> = {};
+    Object.entries(freeTextAnswers).forEach(([scene, text]) => {
+      const index = Number(scene);
+      freeTexts[index] = { text, sentimentScore: freeTextSentiments[index] ?? null };
+    });
+    return freeTexts;
+  };
+
+  // Defensive guard: if we land here with a stale finished session (e.g. browser Back from
+  // /completion), reset to a fresh state and send the participant back to consent so a guest
+  // can never write into an already-completed session (which would overwrite its data).
+  useEffect(() => {
+    if (completed) {
+      resetSession();
+      navigate('/', { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completed, resetSession, navigate]);
 
   // Note: there is deliberately no onAuthStateChanged auto-forward. The Google login is never
   // cached across visits (session-only persistence + sign-out on the final screen), so every
@@ -69,23 +90,18 @@ export const GoogleLogin = () => {
         return;
       }
 
-      if (sessionId) {
-        try {
-          await linkSessionToUser(sessionId, uid);
-        } catch (linkErr) {
-          const le = linkErr as { code?: string };
-          // The in-progress session doc no longer exists (deleted/lost server-side while this link
-          // still held its id), so the write was rejected as an invalid create. Recreate a fresh,
-          // well-formed session owned by this user so the summary flow can still save.
-          if (le.code === 'permission-denied' || le.code === 'not-found') {
-            console.warn('Session link failed (session likely deleted); recreating a fresh session.', le);
-            const freshId = await recoverMissingSession(uid, getDeviceType());
-            setSession(freshId);
-          } else {
-            throw linkErr;
-          }
-        }
-      }
+      // This is the moment the participant chose Google: commit ALL the locally-recorded
+      // gameplay data to a brand-new Firestore session owned by this user (fresh sessionId,
+      // never reusing/overwriting anything). Then the summary flow writes on top of it.
+      const freshSessionId = await finalizeSession({
+        deviceType: getDeviceType(),
+        userId: uid,
+        currentScene,
+        sceneChoices,
+        freeTexts: buildFreeTexts(),
+        miniGames,
+      });
+      setSession(freshSessionId);
       navigate('/summary', { replace: true });
     } catch (err) {
       const e = err as { code?: string };
@@ -93,11 +109,11 @@ export const GoogleLogin = () => {
       if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
         setError(null);
       } else if (e.code === 'permission-denied' || e.code === 'storage/permission-denied') {
-        // A Firestore rules denial during the post-auth session-link write (linkSessionToUser).
+        // A Firestore rules denial during the session creation (finalizeSession).
         // This is NOT a Google auth failure — name it clearly so it isn't misread as a sign-in
         // problem (e.g. by someone debugging `firestore.rules`).
-        console.error('Session-link write denied by Firestore rules:', err);
-        setError("We couldn't link your session to this account due to a permissions error. Please try again or contact the study team.");
+        console.error('Session write denied by Firestore rules:', err);
+        setError("We couldn't save your session to this account due to a permissions error. Please try again or contact the study team.");
       } else {
         console.error('Google sign-in failed:', err);
         setError('Sign-in failed. Please try again.');
@@ -111,16 +127,32 @@ export const GoogleLogin = () => {
     playHoverSound(ctx);
   };
 
-  // Guest path: the session was already created at consent, so no sign-in is needed. We just
-  // continue straight to the results. Exactly the same anonymous data set is used as with Google
-  // sign-in — the only thing skipped is the UID-based duplicate-prevention check (which requires
-  // an authenticated account). This is deliberate: a guest stays fully anonymous.
-  const handleGuest = () => {
+  // Guest path: the session is finalized RIGHT HERE, when the participant chooses guest, with a
+  // brand-new anonymous sessionId (no userId) and the full locally-recorded gameplay data. Nothing
+  // was written to Firestore during gameplay. The only thing skipped vs. Google is the UID-based
+  // duplicate-prevention check (which requires an authenticated account) — a guest stays fully
+  // anonymous.
+  const handleGuest = async () => {
     setError(null);
     setStartingGuest(true);
     const ctx = getAudioCtxInstance(audioCtxRef);
     playStartSound(ctx);
-    navigate('/summary', { replace: true });
+    try {
+      const freshSessionId = await finalizeSession({
+        deviceType: getDeviceType(),
+        userId: null,
+        currentScene,
+        sceneChoices,
+        freeTexts: buildFreeTexts(),
+        miniGames,
+      });
+      setSession(freshSessionId);
+      navigate('/summary', { replace: true });
+    } catch (err) {
+      console.error('Failed to finalize guest session:', err);
+      setError("We couldn't save your session right now. Please check your connection and try again.");
+      setStartingGuest(false);
+    }
   };
 
   return (

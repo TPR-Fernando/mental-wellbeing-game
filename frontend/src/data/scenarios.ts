@@ -119,7 +119,7 @@ export const scenarios: Scene[] = [
   {
     id: 7,
     title: "Lunch",
-    scaleItem: "SWEMWBS S6",
+    scaleItem: "SWEMWBS S3",
     text: "It's lunchtime. You're getting food and a few coursemates wave you over to their table.",
     choices: [
       { id: "A", text: "Join them, it's easy. Actually laugh a few times.", weight: 2, layout: { x: 20, y: 10, width: 31, height: 88 } },
@@ -183,7 +183,7 @@ export const scenarios: Scene[] = [
   {
     id: 12,
     title: "Social Invitation",
-    scaleItem: "SWEMWBS S3",
+    scaleItem: "SWEMWBS S6",
     text: "A friend invites you over that evening, nothing big, just watching something together. You've got some work left but nothing urgent tonight.",
     choices: [
       { id: "A", text: "Go, it's easy. Actually looking forward to it.", weight: 2, layout: { x: 18, y: 10, width: 31, height: 88 } },

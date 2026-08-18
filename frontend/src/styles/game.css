@@ -99,7 +99,7 @@
   transition: width 0.1s linear, background 0.2s ease;
 }
 
-/* ── "How do you respond?" label ──────────────────────────────────── */
+/* ── "How would you respond?" label ──────────────────────────────────── */
 .choices-heading {
   font-size: 0.8rem;
   font-weight: 600;

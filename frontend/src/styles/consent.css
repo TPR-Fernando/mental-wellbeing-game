@@ -7,7 +7,7 @@
   /* Total vertical wrapper padding (1.5rem top + 3rem bottom from .game-wrapper)
      minus the card's own max-height — used so the card always fits inside the
      wrapper's padding box and only .consent-content scrolls internally. */
-  --consent-vpad: 4.5rem;
+  --consent-vpad: 3rem;
   position: relative;
   isolation: isolate;
   box-sizing: border-box;

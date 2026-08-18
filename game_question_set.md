@@ -45,17 +45,19 @@
 | 4 | WHO-5 W5 | Daily life filled with interesting things |
 | 5 | SWEMWBS S7 | Able to make up own mind |
 | 6 | SWEMWBS S4 | Dealing with problems well |
-| 7 | SWEMWBS S6 | Feeling close to other people |
+| 7 | SWEMWBS S3 | Feeling relaxed |
 | 8 | SWEMWBS S2 | Feeling useful |
 | 9 | WHO-5 W3 *(2nd measurement)* | Felt active and vigorous |
 | 10 | SWEMWBS S5 | Thinking clearly |
 | 11 | SWEMWBS S7 *(2nd measurement)* | Able to make up own mind |
-| 12 | SWEMWBS S3 | Feeling relaxed |
+| 12 | SWEMWBS S6 | Feeling close to other people |
 | 13 | WHO-5 W2 | Felt calm and relaxed |
 | 14 | WHO-5 W1 | Felt cheerful and in good spirits |
 | 15 | WHO-5 W2 *(2nd measurement)* | Felt calm and relaxed |
 
 > Items measured twice (W2, W3, S7) provide within-scale reliability checks and richer signal for the model.
+
+> **Scene 7 ↔ Scene 12 swap (S3 / S6):** Scene 12 *(Social Invitation)* previously carried SWEMWBS S3 *(feeling relaxed)* — the weakest item-to-scene fit in the set, since its content (accepting or declining a friend's invitation, work guilt, withdrawal) is fundamentally about *closeness to others*, not relaxation. S3 therefore moves to Scene 7 *(Lunch)*, whose choices ("actually laugh a few times" → "avoid it, eat alone — people feel like too much") track social ease/comfort at ease with people — a clean behavioural proxy for feeling relaxed, with no work-guilt confound. Every one of the 7 SWEMWBS items stays covered exactly once (S7 twice) and all scene contents and choice weights are untouched.
 
 ---
 
@@ -160,7 +162,7 @@
 ---
 
 ### Scene 7 — Lunch
-**Mapped to:** SWEMWBS S6 *(feeling close to other people)*  
+**Mapped to:** SWEMWBS S3 *(feeling relaxed — at ease with people: joining in and laughing easily vs. eating alone because people feel like too much)*  
 **Free-text prompt:** No
 
 > It's lunchtime. You're getting food and a few coursemates wave you over to their table.
@@ -246,7 +248,7 @@ Unlike the other 14 scenes, this one runs on a visible countdown instead of a pl
 ---
 
 ### Scene 12 — Social Invitation
-**Mapped to:** SWEMWBS S3 *(feeling relaxed)*  
+**Mapped to:** SWEMWBS S6 *(feeling close to other people — choosing to spend the evening with a friend vs. turning contact down)*  
 **Free-text prompt:** No
 
 > A friend invites you over that evening, nothing big, just watching something together. You've got some work left but nothing urgent tonight.
@@ -344,5 +346,6 @@ Both LLM calls (plus one for `generate_summary`) count toward the 3-call-per-ses
 - Items measured twice (W2, W3, S7): average the two weights per participant.
 - WHO-5 predicted score: sum of 5 item weights (range -10 to +10), rescaled to 0–100 via `((sum + 10) / 20) * 100`.
 - SWEMWBS predicted score: sum of 7 item weights (range -14 to +14), rescaled to the official 7–35 metric range via `sum + 21` (linear, since 7 items × ±2 maps directly onto that span).
+- **Mini-game adjustment (matches `Summary.tsx`):** the 3 word-choice mini-game weights (each −1/0/+1, total −3…+3) are added to **both** predicted raw sums before rescaling — `who5Raw += miniGameTotal`, `swemwbsRaw += miniGameTotal` — then clamped to 0–100 / 7–35. This slightly nudges the *predicted* snapshot scores and the AI summary tone only; the ground-truth questionnaire (post-narrative forms) is never affected by mini-game weights.
 - Every scene also logs raw reaction time in milliseconds (scene render → choice tap), used to build each participant's own median decision pace. Scene 11's hesitation is judged relative to that personal baseline, not a fixed cutoff, see Scene 11 above for why.
 - These predicted scores are compared against the actual WHO-5 and SWEMWBS questionnaire responses collected at the end of the session.

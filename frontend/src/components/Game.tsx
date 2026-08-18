@@ -4,7 +4,6 @@ import { useGameStore } from '../store/gameStore';
 import { scenarios } from '../data/scenarios';
 import { scenarioImages } from '../data/scenarioImages';
 import { wordChoices } from '../data/wordChoices';
-import { saveSceneChoice, saveFreeText, saveMiniGame } from '../services/firestoreSession';
 import { scoreText } from '../utils/sentiment';
 import { getAudioCtxInstance } from './Home';
 import { setAmbientScene } from '../services/ambientMusic';
@@ -159,7 +158,7 @@ const AlarmSceneBg: React.FC = () => (
 // ── Main Component ───────────────────────────────────────────────────
 export const Game = () => {
   const navigate = useNavigate();
-  const { currentScene, sessionId, pendingMiniGame, recordChoice, recordReactionTime, recordText, recordMiniGameWeight, nextScene, setPendingMiniGame } =
+  const { currentScene, pendingMiniGame, recordChoice, recordReactionTime, recordText, recordSceneChoice, recordMiniGame, recordMiniGameWeight, nextScene, setPendingMiniGame } =
     useGameStore();
 
   const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
@@ -241,13 +240,12 @@ export const Game = () => {
         clearInterval(intervalId);
         recordReactionTime(currentScene, limitMs);
         recordChoice(currentScene, timeoutWeight);
-        if (sessionId) {
-          void saveSceneChoice(sessionId, currentScene, {
-            optionId: 'timeout',
-            weight: timeoutWeight,
-            timeMs: limitMs,
-          }).catch((err) => console.error('Failed to save timed scene choice:', err));
-        }
+        // Recorded locally; nothing is written to Firestore until Guest/Google selection.
+        recordSceneChoice(currentScene, {
+          optionId: 'timeout',
+          weight: timeoutWeight,
+          timeMs: limitMs,
+        });
         goToNextScene();
       }
     }, 100);
@@ -328,17 +326,15 @@ export const Game = () => {
                     default: weight = 0; // Ensure weight is always assigned
                   }
 
-                  // Save the choice and complete mini-game
+                  // Save the choice locally and complete mini-game (not written to Firestore yet)
                   recordMiniGameWeight(miniGameIndex!, weight);
-                  if (sessionId) {
-                    const decisionTimeMs = performance.now() - miniGameStartRef.current;
-                    void saveMiniGame(sessionId, miniGameIndex!, {
-                      word: word.text,
-                      weight,
-                      decisionTimeMs,
-                      sceneContext: miniGameChoiceSet.sceneContext,
-                    }).catch((err) => console.error('Failed to save mini-game result:', err));
-                  }
+                  const decisionTimeMs = performance.now() - miniGameStartRef.current;
+                  recordMiniGame(miniGameIndex!, {
+                    word: word.text,
+                    weight,
+                    decisionTimeMs,
+                    sceneContext: miniGameChoiceSet.sceneContext,
+                  });
 
                   // Complete the mini-game
                   setPendingMiniGame(null);
@@ -376,12 +372,9 @@ export const Game = () => {
     const elapsed = performance.now() - sceneStartRef.current;
     recordReactionTime(currentScene, elapsed);
     recordChoice(currentScene, weight);
+    // Recorded locally; nothing is written to Firestore until Guest/Google selection.
+    recordSceneChoice(currentScene, { optionId, weight, timeMs: elapsed });
     setSelectedChoice(weight);
-    if (sessionId) {
-      void saveSceneChoice(sessionId, currentScene, { optionId, weight, timeMs: elapsed }).catch((err) =>
-        console.error('Failed to save scene choice:', err),
-      );
-    }
     if (scene.freeTextPrompt) {
       setShowPrompt(true);
     } else {
@@ -391,12 +384,9 @@ export const Game = () => {
 
   const handleNextScene = () => {
     if (showPrompt && freeText.trim().length > 0) {
-      recordText(currentScene, freeText);
-      if (sessionId) {
-        void saveFreeText(sessionId, currentScene, freeText, scoreText(freeText)).catch((err) =>
-          console.error('Failed to save scene reflection:', err),
-        );
-      }
+      // Store the reflection text and its local sentiment score together, ready for the
+      // one-shot Firestore write on the login screen.
+      recordText(currentScene, freeText, scoreText(freeText));
     }
     goToNextScene();
   };
@@ -455,7 +445,7 @@ export const Game = () => {
       {/* Answers / free-text */}
       {!showPrompt ? (
         <div className="answers-area">
-          <p className="answers-heading" style={{ color: 'rgba(255,255,255,0.82)' }}>How do you respond?</p>
+          <p className="answers-heading" style={{ color: 'rgba(255,255,255,0.82)' }}>How would you respond?</p>
           <div className={`answers-grid answers-count-${scene.choices.length}`}>
             {scene.choices.map((choice, idx) => {
               // Calculate dynamic width based on text length (more variance: 25% - 65%)

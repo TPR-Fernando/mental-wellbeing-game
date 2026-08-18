@@ -22,7 +22,14 @@ interface PersistedSession {
   choices: Record<number, number>;
   reactionTimes: Record<number, number>;
   freeTextAnswers: Record<number, string>;
+  freeTextSentiments: Record<number, number | null>;
   miniGameWeights: Record<number, -1 | 0 | 1>;
+  // Rich per-scene choice details (optionId, weight, timeMs) and per-mini-game results
+  // (word, weight, decisionTimeMs, sceneContext). These are kept in client state until the
+  // participant selects Guest or Google on the login screen, at which point the WHOLE session
+  // (including this full gameplay history) is committed to Firestore in one new document.
+  sceneChoices: Record<number, { optionId: string; weight: number; timeMs: number }>;
+  miniGames: Record<number, { word: string; weight: -1 | 0 | 1; decisionTimeMs: number; sceneContext: string }>;
   pendingMiniGame: number | null;
 }
 
@@ -52,7 +59,10 @@ function loadPersistedSession(): PersistedSession {
     choices: {},
     reactionTimes: {},
     freeTextAnswers: {},
+    freeTextSentiments: {},
     miniGameWeights: {},
+    sceneChoices: {},
+    miniGames: {},
     pendingMiniGame: null,
   };
   if (typeof window === 'undefined') return empty;
@@ -82,7 +92,32 @@ function loadPersistedSession(): PersistedSession {
       choices: asRecord<number>(parsed.choices, (v) => typeof v === 'number' && !Number.isNaN(v)),
       reactionTimes: asRecord<number>(parsed.reactionTimes, (v) => typeof v === 'number' && v >= 0),
       freeTextAnswers: asRecord<string>(parsed.freeTextAnswers, (v) => typeof v === 'string'),
+      freeTextSentiments: asRecord<number | null>(
+        parsed.freeTextSentiments,
+        (v) => v === null || typeof v === 'number',
+      ),
       miniGameWeights: asRecord<-1 | 0 | 1>(parsed.miniGameWeights, (v) => v === -1 || v === 0 || v === 1),
+      sceneChoices: asRecord<{ optionId: string; weight: number; timeMs: number }>(
+        parsed.sceneChoices,
+        (v) =>
+          typeof v === 'object' &&
+          v !== null &&
+          typeof (v as { optionId?: unknown }).optionId === 'string' &&
+          typeof (v as { weight?: unknown }).weight === 'number' &&
+          typeof (v as { timeMs?: unknown }).timeMs === 'number',
+      ),
+      miniGames: asRecord<{ word: string; weight: -1 | 0 | 1; decisionTimeMs: number; sceneContext: string }>(
+        parsed.miniGames,
+        (v) =>
+          typeof v === 'object' &&
+          v !== null &&
+          typeof (v as { word?: unknown }).word === 'string' &&
+          ((v as { weight?: unknown }).weight === -1 ||
+            (v as { weight?: unknown }).weight === 0 ||
+            (v as { weight?: unknown }).weight === 1) &&
+          typeof (v as { decisionTimeMs?: unknown }).decisionTimeMs === 'number' &&
+          typeof (v as { sceneContext?: unknown }).sceneContext === 'string',
+      ),
       pendingMiniGame: isPositiveSceneNumber(parsed.pendingMiniGame) ? parsed.pendingMiniGame : null,
     };
   } catch {
@@ -101,15 +136,16 @@ function persistSession(patch: Partial<PersistedSession>): void {
 
 // Persists only the game-progression fields; the session-metadata setters already
 // persist their own fields, and the read-then-write merge above keeps both groups in
-// sync. Guarded on sessionId for parity with those setters (progression mutations are
-// unreachable before consent creates a session anyway).
+// sync. No longer guarded on a Firestore sessionId: gameplay happens BEFORE a session
+// document exists (the user only selects Guest/Google on the login screen), so this
+// must persist to localStorage regardless so a refresh mid-game is never lost.
 function persistGameProgression(
   sessionId: string | null,
   progression: Partial<
-    Pick<PersistedSession, 'currentScene' | 'choices' | 'reactionTimes' | 'freeTextAnswers' | 'miniGameWeights' | 'pendingMiniGame'>
+    Pick<PersistedSession, 'currentScene' | 'choices' | 'reactionTimes' | 'freeTextAnswers' | 'freeTextSentiments' | 'miniGameWeights' | 'sceneChoices' | 'miniGames' | 'pendingMiniGame'>
   >,
 ): void {
-  if (!sessionId) return;
+  void sessionId;
   persistSession(progression);
 }
 
@@ -118,7 +154,10 @@ interface GameState {
   choices: Record<number, number>; // Maps scene index to weight (-2 to +2)
   reactionTimes: Record<number, number>; // Maps scene index to ms from scene render to choice tap
   freeTextAnswers: Record<number, string>; // Maps scene index to text
+  freeTextSentiments: Record<number, number | null>;
   miniGameWeights: Record<number, -1 | 0 | 1>; // Maps mini-game index (1-3) to weight; feeds only into AI summary
+  sceneChoices: Record<number, { optionId: string; weight: number; timeMs: number }>;
+  miniGames: Record<number, { word: string; weight: -1 | 0 | 1; decisionTimeMs: number; sceneContext: string }>;
   pendingMiniGame: number | null; // Mini-game awaiting completion (persisted so a refresh mid-mini-game resumes it)
   sessionId: string | null;
   consentGiven: boolean;
@@ -129,11 +168,15 @@ interface GameState {
   predictedScores: { who5Predicted: number; swemwbsPredicted: number } | null;
   recordChoice: (sceneIndex: number, weight: number) => void;
   recordReactionTime: (sceneIndex: number, ms: number) => void;
-  recordText: (sceneIndex: number, text: string) => void;
+  recordText: (sceneIndex: number, text: string, sentimentScore: number | null) => void;
   recordMiniGameWeight: (miniGameIndex: number, weight: -1 | 0 | 1) => void;
+  recordSceneChoice: (sceneIndex: number, data: { optionId: string; weight: number; timeMs: number }) => void;
+  recordMiniGame: (miniGameIndex: number, result: { word: string; weight: -1 | 0 | 1; decisionTimeMs: number; sceneContext: string }) => void;
   nextScene: () => void;
   setPendingMiniGame: (miniGameIndex: number | null) => void;
+  setConsentGiven: () => void;
   resetGame: () => void;
+  resetSession: () => void;
   setSession: (sessionId: string) => void;
   setCompleted: () => void;
   setWellbeingSummary: (summary: string) => void;
@@ -153,6 +196,9 @@ export const useGameStore = create<GameState>((set, get) => {
     freeTextAnswers: persisted.freeTextAnswers,
     miniGameWeights: persisted.miniGameWeights,
     pendingMiniGame: persisted.pendingMiniGame,
+    sceneChoices: persisted.sceneChoices,
+    miniGames: persisted.miniGames,
+    freeTextSentiments: persisted.freeTextSentiments,
     sessionId: persisted.sessionId,
     consentGiven: persisted.consentGiven,
     userId: persisted.userId,
@@ -175,11 +221,12 @@ export const useGameStore = create<GameState>((set, get) => {
         return { reactionTimes };
       }),
 
-    recordText: (sceneIndex, text) =>
+    recordText: (sceneIndex, text, sentimentScore) =>
       set((state) => {
         const freeTextAnswers = { ...state.freeTextAnswers, [sceneIndex]: text };
-        persistGameProgression(state.sessionId, { freeTextAnswers });
-        return { freeTextAnswers };
+        const freeTextSentiments = { ...state.freeTextSentiments, [sceneIndex]: sentimentScore };
+        persistGameProgression(state.sessionId, { freeTextAnswers, freeTextSentiments });
+        return { freeTextAnswers, freeTextSentiments };
       }),
 
     recordMiniGameWeight: (miniGameIndex, weight) =>
@@ -187,6 +234,26 @@ export const useGameStore = create<GameState>((set, get) => {
         const miniGameWeights = { ...state.miniGameWeights, [miniGameIndex]: weight };
         persistGameProgression(state.sessionId, { miniGameWeights });
         return { miniGameWeights };
+      }),
+
+    // Records the full choice details (optionId, weight, timeMs) locally for the eventual
+    // one-shot Firestore write. Kept separate from `choices` (which only stores the weight
+    // for the Summary screen) so the complete research-grade record survives a refresh.
+    recordSceneChoice: (sceneIndex, data) =>
+      set((state) => {
+        const sceneChoices = { ...state.sceneChoices, [sceneIndex]: data };
+        persistGameProgression(state.sessionId, { sceneChoices });
+        return { sceneChoices };
+      }),
+
+    // Records the full mini-game result (word, weight, decisionTimeMs, sceneContext) locally
+    // for the eventual one-shot Firestore write. `miniGameWeights` still carries just the
+    // weight for the Summary screen.
+    recordMiniGame: (miniGameIndex, result) =>
+      set((state) => {
+        const miniGames = { ...state.miniGames, [miniGameIndex]: result };
+        persistGameProgression(state.sessionId, { miniGames });
+        return { miniGames };
       }),
 
     // Used to judge Scene 11's hesitation relative to this participant's own pace,
@@ -221,11 +288,23 @@ export const useGameStore = create<GameState>((set, get) => {
           choices: {},
           reactionTimes: {},
           freeTextAnswers: {},
+          freeTextSentiments: {},
           miniGameWeights: {},
+          sceneChoices: {},
+          miniGames: {},
           pendingMiniGame: null,
         };
         persistGameProgression(state.sessionId, freshProgress);
         return freshProgress;
+      }),
+
+    // Marks that the participant has consented and lets them proceed into the game. No
+    // Firestore session document exists yet — it is created later on the login screen once
+    // they choose Guest or Google (see firestoreSession.finalizeSession).
+    setConsentGiven: () =>
+      set((state) => {
+        persistSession({ consentGiven: true, userId: state.userId, wellbeingSummary: state.wellbeingSummary, groundTruthScores: state.groundTruthScores, predictedScores: state.predictedScores });
+        return { consentGiven: true };
       }),
 
     setSession: (sessionId) =>
@@ -233,6 +312,34 @@ export const useGameStore = create<GameState>((set, get) => {
         persistSession({ sessionId, consentGiven: true, userId: state.userId, wellbeingSummary: state.wellbeingSummary, groundTruthScores: state.groundTruthScores, predictedScores: state.predictedScores });
         return { sessionId, consentGiven: true };
       }),
+
+    // Full wipe: clears the persisted key AND every in-memory session field so the
+    // next participant starts completely fresh (new consent, new sessionId, no leftover
+    // userId/completed/results). Unlike resetGame(), this also abandons the previous
+    // session identity so a new attempt never reuses or overwrites the old session doc.
+    resetSession: () => {
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem(SESSION_STORAGE_KEY);
+      }
+      set({
+        sessionId: null,
+        consentGiven: false,
+        userId: null,
+        completed: false,
+        wellbeingSummary: null,
+        groundTruthScores: null,
+        predictedScores: null,
+        currentScene: 1,
+        choices: {},
+        reactionTimes: {},
+        freeTextAnswers: {},
+        freeTextSentiments: {},
+        miniGameWeights: {},
+        sceneChoices: {},
+        miniGames: {},
+        pendingMiniGame: null,
+      });
+    },
 
     // Marks a session as finished (called when the participant reaches /completion). persistSession
     // merges this with the currently stored session, so all other fields are preserved.
