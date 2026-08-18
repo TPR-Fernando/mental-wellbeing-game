@@ -293,6 +293,8 @@ export const Game = () => {
           <div className="scenario-wrapper">
             <img src={theme.bgImage} alt="" className="scenario-bg" />
             <div className="scenario-overlay" />
+            <div className="scenario-shade" />
+            <div className="scenario-vignette" />
           </div>
         )}
 
@@ -396,7 +398,7 @@ export const Game = () => {
       className={`game-scene${entering ? ' game-scene-entering' : ''}`}
       style={{ '--gs-accent': theme.accent, '--gs-accent-dark': theme.accentDark } as React.CSSProperties}
     >
-      {/* Scenario image background with overlay */}
+      {/* Scenario image background with overlay + atmospheric shading */}
       {theme.bgImage && (
         <div className="scenario-wrapper">
           <img
@@ -406,6 +408,8 @@ export const Game = () => {
             style={{ '--accent': theme.accent } as React.CSSProperties & { '--accent': string }}
           />
           <div className="scenario-overlay" />
+          <div className="scenario-shade" />
+          <div className="scenario-vignette" />
         </div>
       )}
 

@@ -4,7 +4,7 @@
    photos sit on top of these without ever showing the "space" look. */
 @media (prefers-color-scheme: dark) {
   body {
-    background: linear-gradient(135deg, #2d1b47 0%, #202a49 40%, #1d3a2e 70%, #332417 100%);
+    background: linear-gradient(135deg, #2e1d42 0%, #1a2640 40%, #163228 70%, #2a1c12 100%);
     background-attachment: fixed;
   }
   .scene-card,

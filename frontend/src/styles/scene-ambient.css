@@ -3,10 +3,10 @@
    =================================================================== */
 
 @keyframes amb-blob-float {
-  0%   { transform: translate(0,0)     scale(1);    opacity: 0.12; }
-  33%  { transform: translate(18px,-22px) scale(1.06); opacity: 0.18; }
-  66%  { transform: translate(-12px,14px) scale(0.94); opacity: 0.14; }
-  100% { transform: translate(0,0)     scale(1);    opacity: 0.12; }
+  0%   { transform: translate(0,0)     scale(1);    opacity: 0.20; }
+  33%  { transform: translate(18px,-22px) scale(1.06); opacity: 0.28; }
+  66%  { transform: translate(-12px,14px) scale(0.94); opacity: 0.24; }
+  100% { transform: translate(0,0)     scale(1);    opacity: 0.20; }
 }
 .ambient-blob {
   position: absolute;
@@ -16,13 +16,13 @@
   pointer-events: none;
 }
 
-/* ── Per-scene illustrated icons ─────────────────────────────────── */
+/* ── Per-scene illustrated icons (lowered opacity for atmospheric depth) ── */
 .amb-icon {
   position: absolute;
   right: 6%;
   bottom: 28%;
   pointer-events: none;
-  opacity: 0.22;
+  opacity: 0.10;
   z-index: 1;
   animation: amb-blob-float 8s ease-in-out infinite;
 }
