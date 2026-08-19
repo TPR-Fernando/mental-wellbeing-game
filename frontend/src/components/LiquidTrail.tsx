@@ -1,8 +1,15 @@
 import { useEffect, useRef } from 'react';
 
 const BALL_COUNT = 16;
-const INACTIVITY_TIMEOUT = 3000;
-const FADE_DURATION = '0.6s';
+const MOBILE_BREAKPOINT = 768;
+
+// How quickly the custom cursor fades out after the pointer stops moving.
+// Mobile viewports fade faster so the trail doesn't linger over the UI;
+// desktop keeps its original, longer timings.
+const TIMINGS = {
+  mobile: { timeout: 1800, fade: '0.6s' },
+  desktop: { timeout: 3000, fade: '0.6s' },
+};
 
 interface LiquidTrailProps {
   /** Accent color for the cursor bobble balls */
@@ -56,11 +63,21 @@ export function LiquidTrail({ accentColor = 'rgba(147, 95, 255, 0.92)' }: Liquid
     const mouse = { x: -1000, y: -1000 };
     let inactivityTimer: ReturnType<typeof setTimeout>;
 
+    // Live mobile/desktop detection so the fade timings update immediately
+    // when the viewport changes (e.g. switching to mobile view without a
+    // full page reload), instead of being locked in at module load.
+    const mobileMq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+    const currentTimings = () => (mobileMq.matches ? TIMINGS.mobile : TIMINGS.desktop);
+
+    const applyFadeStyles = () => {
+      container.style.transition = `opacity ${currentTimings().fade} ease`;
+    };
+
     const scheduleFade = () => {
       clearTimeout(inactivityTimer);
       inactivityTimer = setTimeout(() => {
         container.style.opacity = '0';
-      }, INACTIVITY_TIMEOUT);
+      }, currentTimings().timeout);
     };
 
     const onMouseMove = (e: MouseEvent) => {
@@ -71,8 +88,9 @@ export function LiquidTrail({ accentColor = 'rgba(147, 95, 255, 0.92)' }: Liquid
     };
 
     container.style.opacity = '1';
-    container.style.transition = `opacity ${FADE_DURATION} ease`;
+    applyFadeStyles();
     window.addEventListener('mousemove', onMouseMove, { passive: true });
+    mobileMq.addEventListener('change', applyFadeStyles);
     scheduleFade();
 
     let raf: number;
@@ -103,6 +121,7 @@ export function LiquidTrail({ accentColor = 'rgba(147, 95, 255, 0.92)' }: Liquid
       cancelAnimationFrame(raf);
       clearTimeout(inactivityTimer);
       window.removeEventListener('mousemove', onMouseMove);
+      mobileMq.removeEventListener('change', applyFadeStyles);
       balls.forEach(b => b.el.remove());
       ballsRef.current = [];
     };
