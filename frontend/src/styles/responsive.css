@@ -115,6 +115,24 @@
     min-height: 60px;
     min-width: 0;
   }
+  /* Choices carry BOTH .answer-cloud and .smoke-bg, so the shared ::before
+     is defined in game-scene.css (loaded AFTER this file). That rule had
+     inset:-18px / blur(26px) (and smoke-bg's -80px / blur(60px)), whose big
+     spread washed the white glow over the stacked choice text on mobile.
+     Keep a strong white glow but concentrate it in the middle of each bubble,
+     fading to transparent before the text edges — a higher-specificity
+     selector + !important ensures this wins. Box width/padding untouched. */
+  .answer-cloud.smoke-bg::before {
+    /* Two-layer glow: an outer halo that wraps around the bubble (previous
+       look) PLUS a brighter white glow concentrated in the middle. Layered
+       backgrounds let one ::before draw both. Text edges stay readable. */
+    inset: -6px !important;
+    background:
+      radial-gradient(ellipse 60% 60% at center, var(--acbg, rgba(255,255,255,0.96)) 0%, transparent 70%),
+      var(--acbg, rgba(255,255,255,0.55)) !important;
+    filter: blur(12px) !important;
+    opacity: 0.72 !important;
+  }
   /* Alternate left/right offset for a visual scatter feel */
   .answer-cloud:nth-child(odd) {
     align-self: flex-start;
@@ -166,6 +184,17 @@
     max-width: none !important;
     min-height: 52px;
     min-width: 0;
+  }
+  /* Same approach on landscape (short) phones: strong white glow kept in the
+     middle of the bubble, fading out before the text edges. */
+  .answer-cloud.smoke-bg::before {
+    /* Outer wrap glow (previous look) + brighter center, via layered backgrounds */
+    inset: -6px !important;
+    background:
+      radial-gradient(ellipse 60% 60% at center, var(--acbg, rgba(255,255,255,0.96)) 0%, transparent 70%),
+      var(--acbg, rgba(255,255,255,0.55)) !important;
+    filter: blur(12px) !important;
+    opacity: 0.72 !important;
   }
   .answer-cloud:nth-child(odd) {
     align-self: flex-start;
